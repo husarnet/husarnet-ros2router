@@ -1,0 +1,17 @@
+allowlist:
+  - name: "rt/chatter"
+    type: "std_msgs::msg::dds_::String_"
+
+internal_partipant:
+  type: local
+  domain: 0
+
+external_partipant:
+  type: "local-discovery-server"
+  id: 200
+
+  listening-addresses:
+    - domain: "my-discovery-server-hostname"
+      port: 11811
+      transport: "udp"
+      

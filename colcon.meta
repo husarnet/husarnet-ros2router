@@ -1,0 +1,33 @@
+{
+    "names":
+    {
+        "fastrtps":
+        {
+            "cmake-args":
+            [
+                "-DSECURITY=ON"
+            ]
+        },
+        "rmw_fastrtps_shared_cpp":
+        {
+            "cmake-args":
+            [
+                "-DSECURITY=ON"
+            ]
+        },
+        "rmw_fastrtps_dynamic_cpp":
+        {
+            "cmake-args":
+            [
+                "-DSECURITY=ON"
+            ]
+        },
+        "rmw_fastrtps_cpp":
+        {
+            "cmake-args":
+            [
+                "-DSECURITY=ON"
+            ]
+        }
+    }
+}
