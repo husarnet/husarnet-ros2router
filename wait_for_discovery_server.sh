@@ -8,6 +8,8 @@ done
 
 sleep 2
 
+ping6 -w 120 -c 1 ${DS_HOSTNAME}
+
 echo "\"${DS_HOSTNAME}\" present in /etc/hosts:"
 
 # print the IPv6 address of the Discovery Server

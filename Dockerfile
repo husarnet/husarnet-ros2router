@@ -33,7 +33,8 @@ FROM ros:galactic-ros-core
 ENV DS_HOSTNAME=ds
 
 RUN apt-get update && apt-get install -y \
-    libyaml-cpp-dev && \
+    libyaml-cpp-dev \
+    iputils-ping && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
