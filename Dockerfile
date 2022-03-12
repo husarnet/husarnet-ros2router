@@ -1,49 +1,51 @@
-FROM ros:galactic AS fastdds_builder
+FROM ubuntu:20.04 AS ddsrouter_builder
 
-# Use bash instead of sh for the RUN steps
-SHELL ["/bin/bash", "-c"]
+ARG DEBIAN_FRONTEND=noninteractive
 
-# Install ros packages and dependencies
 RUN apt-get update && apt-get install -y \
-    # Fast DDS dependencies
-    libssl-dev \
-    libasio-dev \
+    python3 \
     cmake g++ pip wget git \
-    libyaml-cpp-dev
+    libasio-dev \
+    libtinyxml2-dev \
+    libssl-dev \
+    libyaml-cpp-dev \
+    python3-sphinx
 
-WORKDIR /fastdds_overlay
-COPY fastdds.repos colcon.meta /fastdds_overlay/
-RUN source /opt/ros/galactic/setup.bash && \
-    # Download sources
-    mkdir src && \
-    vcs import src < fastdds.repos && \
-    # Install rmw_fastrtps_cpp dependencies without installing ros-galactic-rmw-fastrtps-cpp
-    sed -i 's/ros-'$ROS_DISTRO'-rmw-cyclonedds-cpp | ros-'$ROS_DISTRO'-rmw-connextdds | ros-'$ROS_DISTRO'-rmw-fastrtps-cpp/ros-'$ROS_DISTRO'-rmw-dds-common/' /var/lib/dpkg/status && \
-    rosdep update --rosdistro $ROS_DISTRO && \
-    rosdep install --from-paths src --ignore-src -y && \
-    # Build overlay
-    colcon build && \
-    # Cleanup
-    apt autoremove -y && \
-    rm -rf log/ build/ src/ colcon.meta fastdds.repos && \
-    rm -rf /var/lib/apt/lists/*
+RUN pip3 install -U \
+    colcon-common-extensions \
+    vcstool \
+    sphinx_rtd_theme
 
-FROM ros:galactic-ros-core
+RUN mkdir -p /dds_router/src
+
+WORKDIR /dds_router
+
+COPY ddsrouter.repos colcon.meta /dds_router/
+
+RUN vcs import src < ddsrouter.repos && \
+    git clone --branch release-1.10.0 https://github.com/google/googletest src/googletest-distribution && \
+    colcon build
+
+# FROM ros:galactic-ros-core
+FROM ubuntu:20.04
 
 ENV DS_HOSTNAME=ds
 
 RUN apt-get update && apt-get install -y \
     libyaml-cpp-dev \
-    iputils-ping && \
+    iputils-ping \
+    python3.8 \
+    libtinyxml2-6 \
+    python3 && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=fastdds_builder /fastdds_overlay/install /fastdds_overlay/install
+COPY --from=ddsrouter_builder /dds_router/install /dds_router/install
 
-COPY ros_entrypoint.sh /
-
+COPY entrypoint.sh /
 COPY wait_for_discovery_server.sh /wait_ds.sh
 
-RUN chmod +x /ros_entrypoint.sh
-RUN chmod +x /wait_ds.sh
+RUN chmod +x /entrypoint.sh && \
+    chmod +x /wait_ds.sh
 
+ENTRYPOINT [ "/entrypoint.sh" ]
