@@ -43,9 +43,9 @@ RUN apt-get update && apt-get install -y \
 COPY --from=ddsrouter_builder /dds_router/install /dds_router/install
 
 COPY entrypoint.sh /
-COPY wait_for_discovery_server.sh /wait_ds.sh
+COPY wait_for_discovery_server.sh /usr/local/bin/wait_ds.sh
 
 RUN chmod +x /entrypoint.sh && \
-    chmod +x /wait_ds.sh
+    chmod +x /usr/local/bin/wait_ds.sh
 
 ENTRYPOINT [ "/entrypoint.sh" ]
