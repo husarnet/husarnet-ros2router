@@ -33,9 +33,11 @@ jobs:
       with:
         context: .
         file: Dockerfile
-        platforms: linux/amd64 #, linux/arm64
+        platforms: linux/amd64, linux/arm64
         push: true
         tags: husarnet/dds-router:latest
+        cache-from: type=registry,ref=husarnet/dds-router:latest
+        cache-to: type=inline
         # cache-from: type=registry,ref=husarnet/dds-router:buildcache
         # cache-to: type=registry,ref=husarnet/dds-router:buildcache,mode=max
 
