@@ -27,7 +27,7 @@ RUN vcs import src < ddsrouter.repos && \
     colcon build
 
 # FROM ros:galactic-ros-core
-FROM ubuntu:22.04
+FROM ubuntu:20.04
 
 ENV DS_HOSTNAME=ds
 
