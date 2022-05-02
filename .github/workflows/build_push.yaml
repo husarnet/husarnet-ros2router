@@ -3,7 +3,7 @@ name: Build a Docker Image
 on:
   push:
     branches:
-      - 'main'
+      - 'experimental'
   
 jobs:
   build:
@@ -35,8 +35,8 @@ jobs:
         file: Dockerfile
         platforms: linux/amd64, linux/arm64
         push: true
-        tags: husarnet/dds-router:latest
-        cache-from: type=registry,ref=husarnet/dds-router:latest
+        tags: husarnet/dds-router:experimental
+        cache-from: type=registry,ref=husarnet/dds-router:experimental
         cache-to: type=inline
         # cache-from: type=registry,ref=husarnet/dds-router:buildcache
         # cache-to: type=registry,ref=husarnet/dds-router:buildcache,mode=max
