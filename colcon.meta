@@ -1,11 +1,20 @@
 {
     "names":
     {
+        "ddsrouter":
+        {
+            "cmake-args":
+            [
+                "-DSECURITY=ON",
+                "-DCMAKE_BUILD_TYPE=Release"
+            ]
+        },
         "fastrtps":
         {
             "cmake-args":
             [
-                "-DSECURITY=ON"
+                "-DSECURITY=ON",
+                "-DCMAKE_BUILD_TYPE=Release"
             ]
         },
         "rmw_fastrtps_shared_cpp":
