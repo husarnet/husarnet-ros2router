@@ -40,7 +40,8 @@ RUN apt-get update && apt-get install -y \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=ddsrouter_builder /dds_router/install /dds_router/install
+# COPY --from=ddsrouter_builder /dds_router/install /dds_router/install
+COPY --from=ddsrouter_builder /dds_router /dds_router
 
 COPY entrypoint.sh /
 COPY wait_for_discovery_server.sh /usr/local/bin/wait_ds.sh
