@@ -38,7 +38,7 @@ jobs:
       with:
         platforms: linux/amd64, linux/arm64
         push: true
-        tags: husarnet/dds-router:${DDSROUTER_VERSION}, husarnet/dds-router
+        tags: husarnet/dds-router:${{ DDSROUTER_VERSION }}, husarnet/dds-router
         cache-from: type=registry,ref=husarnet/dds-router
         cache-to: type=inline
 
