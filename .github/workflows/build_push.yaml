@@ -12,7 +12,7 @@ jobs:
       uses: actions/checkout@v1
 
     - name: yq version in gh runner
-      run: yq --version
+      run: echo "DDSROUTER_VERSION=$(yq '.repositories.ddsrouter.version' ddsrouter.repos)" >> $GITHUB_ENV
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
@@ -35,7 +35,9 @@ jobs:
       with:
         platforms: linux/amd64, linux/arm64
         push: true
-        tags: husarnet/dds-router
+        tags: 
+          - husarnet/dds-router:${DDSROUTER_VERSION}
+          - husarnet/dds-router
         cache-from: type=registry,ref=husarnet/dds-router
         cache-to: type=inline
 
