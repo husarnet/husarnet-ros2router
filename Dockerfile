@@ -37,9 +37,9 @@ RUN apt-get update && apt-get install -y \
         python3.8 \
         libtinyxml2-6 \
         python3 && \
-    pip3 install -U \
-        pyyaml \
-        jsonschema && \
+    # pip3 install -U \
+    #     pyyaml \
+    #     jsonschema && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
