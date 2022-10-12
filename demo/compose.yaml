@@ -1,0 +1,30 @@
+services:
+
+  ros2-node:
+    image: husarion/ros2-demo-nodes:humble
+    command: ros2 run demo_nodes_cpp ${COMPOSE_PROJECT_NAME}
+
+  dds_router:
+    image: husarnet/dds-router:v1.0.0
+    network_mode: service:husarnet
+    depends_on: 
+      husarnet: { condition: service_healthy }
+    volumes:
+      - ./router-config-${COMPOSE_PROJECT_NAME}.yaml:/config.yaml
+    command: ddsrouter -c /config.yaml -r 10
+
+  husarnet:
+    image: husarnet/husarnet-nightly:2022.09.29.3
+    volumes:
+      - /var/lib/husarnet
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    environment: 
+      - HOSTNAME=my-${COMPOSE_PROJECT_NAME}
+      - JOINCODE=${JOINCODE:?you need to create .env file with a JOINCODE variable}
+      - WAIT_HOSTNAMES=my-listener,my-talker
+      - HUSARNET_DEBUG=1

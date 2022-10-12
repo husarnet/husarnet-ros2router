@@ -3,43 +3,16 @@ Fast DDS Router adjusted for Husarnet
 
 ## Demo
 
-Create `compose.yaml` file:
+In a terminal window execute:
 
-```yaml
-version: "2.3"
-
-services:
-
-  listener:
-    build: .
-    command: ros2 run demo_nodes_cpp listener
-
-  dds_router:
-    image: husarnet/dds-router
-    restart: always
-    network_mode: service:husarnet
-    volumes:
-      - ./router-config.yaml:/config.yaml
-    command: bash -c "/wait_ds.sh && ddsrouter -c /config.yaml -r 10"
-
-  husarnet:
-    image: husarnet/husarnet
-    restart: on-failure
-    volumes:
-      - /var/lib/husarnet
-    sysctls:
-      - net.ipv6.conf.all.disable_ipv6=0
-    cap_add:
-      - NET_ADMIN
-    devices:
-      - /dev/net/tun
-    environment:
-      - HOSTNAME=rviz
-      - JOINCODE=${HUSARNET_JOINCODE}
+```bash
+export JOINCODE=fc94:b01d:1803:8dd8:b293:5c7d:7639:932a/xxxxxxxxxxxxxxxxxxxxxx # find it at https://app.husarnet.com
+COMPOSE_PROJECT_NAME=listener docker compose up
 ```
 
-and run:
+in a second terminal run:
 
-```
-docker compose up
+```bash
+export JOINCODE=fc94:b01d:1803:8dd8:b293:5c7d:7639:932a/xxxxxxxxxxxxxxxxxxxxxx # find it at https://app.husarnet.com
+COMPOSE_PROJECT_NAME=talker docker compose up
 ```

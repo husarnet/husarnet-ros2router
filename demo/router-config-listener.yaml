@@ -1,0 +1,29 @@
+version: v3.0
+
+allowlist:
+  
+  - name: "*"
+
+participants:
+
+  - name: LocalParticipant
+    kind: local
+    domain: 0
+
+  - name: RemoteParticipant
+    kind: discovery-server
+    discovery-server-guid:
+      id: 2
+      ros-discovery-server: true
+    connection-addresses:
+      - discovery-server-guid:
+          id: 1
+          ros-discovery-server: true
+        addresses:
+          - domain: my-talker
+            port: 11811
+            transport: udp
+    listening-addresses:
+      - domain: my-listener
+        port: 11811
+        transport: udp
