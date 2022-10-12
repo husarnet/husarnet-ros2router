@@ -23,7 +23,3 @@ participants:
           - domain: my-talker
             port: 11811
             transport: udp
-    listening-addresses:
-      - domain: my-listener
-        port: 11811
-        transport: udp
