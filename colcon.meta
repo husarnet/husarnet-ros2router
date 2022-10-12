@@ -5,28 +5,32 @@
         {
             "cmake-args":
             [
-                "-DSECURITY=ON"
+                "-DSECURITY=ON",
+                "-DCMAKE_BUILD_TYPE=Release"
             ]
         },
         "rmw_fastrtps_shared_cpp":
         {
             "cmake-args":
             [
-                "-DSECURITY=ON"
+                "-DSECURITY=ON",
+                "-DCMAKE_BUILD_TYPE=Release"
             ]
         },
         "rmw_fastrtps_dynamic_cpp":
         {
             "cmake-args":
             [
-                "-DSECURITY=ON"
+                "-DSECURITY=ON",
+                "-DCMAKE_BUILD_TYPE=Release"
             ]
         },
         "rmw_fastrtps_cpp":
         {
             "cmake-args":
             [
-                "-DSECURITY=ON"
+                "-DSECURITY=ON",
+                "-DCMAKE_BUILD_TYPE=Release"
             ]
         }
     }
