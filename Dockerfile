@@ -8,13 +8,15 @@ RUN apt-get update && apt-get install -y \
         libasio-dev \
         libtinyxml2-dev \
         libssl-dev \
-        libyaml-cpp-dev \
-        python3-sphinx
+        python3-sphinx \
+        libyaml-cpp-dev
 
 RUN pip3 install -U \
         colcon-common-extensions \
         vcstool \
-        sphinx_rtd_theme
+        pyyaml \
+        sphinx_rtd_theme \
+        jsonschema
 
 RUN mkdir -p /dds_router/src
 
