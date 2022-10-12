@@ -1,0 +1,22 @@
+version: v3.0
+
+allowlist:
+  
+  - name: "*"
+
+participants:
+
+  - name: LocalParticipant
+    kind: local
+    domain: 0
+
+  - name: RemoteParticipant
+    kind: initial-peers
+    listening-addresses:
+      - domain: master
+        port: 11811
+    connection-addresses:
+      - domain: my-talker
+        port: 11811
+      - domain: my-listener
+        port: 11811

@@ -10,7 +10,8 @@ services:
     depends_on: 
       husarnet: { condition: service_healthy }
     volumes:
-      - ./router-config-${COMPOSE_PROJECT_NAME}.yaml:/config.yaml
+      - ./router-config-simple.yaml:/config.yaml
+      # - ./router-config-${COMPOSE_PROJECT_NAME}.yaml:/config.yaml
     command: ddsrouter -c /config.yaml -r 10
 
   husarnet:
