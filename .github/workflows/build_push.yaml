@@ -2,8 +2,6 @@ name: Build a Docker Image
 
 on:
   push:
-    branches:
-      - 'main'
   
 jobs:
   build:
@@ -12,6 +10,12 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v1
+
+    - name: Parse the DDSRouter version
+      run: echo "DDSROUTER_VERSION=$(yq '.repositories.ddsrouter.version' ddsrouter.repos)" >> $GITHUB_ENV
+
+    - name: Print the DDSRouter version
+      run: echo ${{ env.DDSROUTER_VERSION }}
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
@@ -28,17 +32,22 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
           
-    - name: Build and push
-      uses: docker/build-push-action@v2
+    - name: Build and push (production)
+      if: github.ref_name == 'main'
+      uses: docker/build-push-action@v3
       with:
-        context: .
-        file: Dockerfile
         platforms: linux/amd64, linux/arm64
         push: true
-        tags: husarnet/dds-router:latest
-        cache-from: type=registry,ref=husarnet/dds-router:latest
+        tags: husarnet/dds-router:${{ env.DDSROUTER_VERSION }}, husarnet/dds-router
+        cache-from: type=registry,ref=husarnet/dds-router
         cache-to: type=inline
-        # cache-from: type=registry,ref=husarnet/dds-router:buildcache
-        # cache-to: type=registry,ref=husarnet/dds-router:buildcache,mode=max
 
-
+    - name: Build and push (feature branch)
+      if: github.ref_name != 'main'
+      uses: docker/build-push-action@v3
+      with:
+        platforms: linux/amd64, linux/arm64
+        push: true
+        tags: husarnet/dds-router-${{ github.head_ref || github.ref_name }}
+        cache-from: type=registry,ref=husarnet/dds-router-${{ github.head_ref || github.ref_name }}
+        cache-to: type=inline
