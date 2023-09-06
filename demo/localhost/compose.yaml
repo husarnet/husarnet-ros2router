@@ -1,0 +1,46 @@
+services:
+
+  listener:
+    image: husarion/ros2-demo-nodes:humble
+    networks:
+      - listener_net
+    environment:
+      - ROS_DOMAIN_ID=0
+    command: ros2 run demo_nodes_cpp listener
+
+  dds-router-listener:
+    image: husarnet/dds-router:v2.0.0
+    depends_on:
+      - dds-router-talker
+    networks:
+      - listener_net
+      - inter_net
+    volumes:
+      - ./router-config.listener.yaml:/config.yaml
+    command: bash -c "ddsrouter -c /config.yaml -r 10"
+
+# ================================================
+
+  talker:
+    image: husarion/ros2-demo-nodes:humble
+    networks:
+      - talker_net
+    environment:
+      - ROS_DOMAIN_ID=1
+    command: ros2 run demo_nodes_cpp talker
+
+  dds-router-talker:
+    image: husarnet/dds-router:v2.0.0
+    networks:
+      - talker_net
+      - inter_net
+    volumes:
+      - ./router-config.talker.yaml:/config.yaml
+    command: bash -c "ddsrouter -c /config.yaml -r 10"
+
+networks:
+  listener_net:
+  talker_net:
+  inter_net:
+  default:
+    driver: none
