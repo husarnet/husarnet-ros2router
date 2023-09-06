@@ -1,0 +1,26 @@
+version: v2.0
+
+# comment for a dynamic topic discovery
+# builtin:
+#   - name: "rt/chatter"
+#     type: "std_msgs::msg::dds_::String_"
+
+allowlist:
+  - name: "rt/chatter"
+    type: "std_msgs::msg::dds_::String_"
+  # - name: "rt/*"
+
+participants:
+
+  - name: SimpleParticipant
+    kind: local
+    domain: 1
+
+  - name: ServerDSParticipant
+    kind: local-discovery-server
+    discovery-server-guid:
+      id: 200
+    listening-addresses:
+      - domain: talker  # husarnet hostname
+        port: 11811
+        transport: udp

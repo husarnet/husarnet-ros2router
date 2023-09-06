@@ -1,0 +1,35 @@
+services:
+
+  talker:
+    image: husarion/ros2-demo-nodes:humble
+    network_mode: service:husarnet-talker
+    ipc: service:husarnet-talker
+    environment:
+      - ROS_DOMAIN_ID=1
+    command: ros2 run demo_nodes_cpp talker
+
+  dds-router-talker:
+    image: husarnet/dds-router:v2.0.0
+    network_mode: service:husarnet-talker
+    ipc: service:husarnet-talker
+    depends_on: 
+      husarnet-talker: { condition: service_healthy }
+    volumes:
+      - ./router-config.talker.yaml:/config.yaml
+    command: bash -c "ddsrouter -c /config.yaml -r 10"
+
+  husarnet-talker:
+    image: husarnet/husarnet:2.0.170
+    ipc: shareable
+    volumes:
+      - /var/lib/husarnet  # This will persist your Husarnet Client keys, thus IP of the container will be stable/the same between (re)boots
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0  # Husarnet is using IPv6 for the internal connections
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    environment:
+      - WAIT_HOSTNAMES=talker,listener
+      - HOSTNAME=talker
+      - JOINCODE
