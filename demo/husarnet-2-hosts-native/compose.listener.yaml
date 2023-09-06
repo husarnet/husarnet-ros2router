@@ -1,0 +1,26 @@
+# Quick start
+#
+# 1st terminal:
+# docker compose -f compose.listener.yaml up
+# 
+# 2nd terminal:
+# export ROS_DOMAIN_ID=0
+# ros2 run demo_nodes_cpp listener
+
+services:
+
+  listener:
+    image: husarion/ros2-demo-nodes:humble
+    network_mode: host
+    ipc: host
+    environment:
+      - ROS_DOMAIN_ID=0
+    command: ros2 run demo_nodes_cpp listener
+
+  dds-router-listener:
+    image: husarnet/dds-router:v2.0.0
+    network_mode: host
+    ipc: host
+    volumes:
+      - ./router-config.listener.yaml:/config.yaml
+    command: bash -c "ddsrouter -c /config.yaml -r 10"
