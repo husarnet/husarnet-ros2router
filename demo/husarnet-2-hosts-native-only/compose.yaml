@@ -1,0 +1,31 @@
+# Quick start
+#
+# 1st terminal:
+# export DOCKER_UID=$(id -u)
+# export DOCKER_GID=$(id -g)
+# export ROUTER_CONFIG=router-config.talker.yaml
+# docker compose up
+# 
+# 2nd terminal:
+# export ROS_DOMAIN_ID=1
+# ros2 run demo_nodes_cpp talker
+#
+# Comments:
+#   * This is a temporary solution allowing shared memory communication between host and docker container when
+#     using Fast DDS. To be removed when user will be able to change this permission to something else than 0644 
+#     (https://github.com/eProsima/Fast-DDS/blob/master/thirdparty/boost/include/boost/interprocess/permissions.hpp#L100)
+
+services:
+
+  dds-router:
+    image: husarnet/dds-router:v2.0.0
+    restart: unless-stopped
+    network_mode: host
+    ipc: host
+    user: ${DOCKER_UID:-1000}:${DOCKER_GID:-1000} # *
+    volumes:
+      - ./${ROUTER_CONFIG:-router-config.talker.yaml}:/config.yaml
+      - /etc/group:/etc/group:ro                  # *
+      - /etc/passwd:/etc/passwd:ro                # *
+      - /etc/shadow:/etc/shadow:ro                # *
+    command: bash -c "ddsrouter -c /config.yaml -r 10"
