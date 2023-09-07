@@ -1,18 +1,105 @@
 # dds-router
-Fast DDS Router adjusted for Husarnet
 
-## Demo
+Fast DDS Router Docker image adjusted for Husarnet VPN.
 
-In a terminal window execute:
+## Quick Start (Docker)
+
+1. Connect both hosts to the same Husarnet network (eg. named `host_A` and `host_B`).
+
+2. Create a DDS Router config file on the `host_A`:
 
 ```bash
-export JOINCODE=fc94:b01d:1803:8dd8:b293:5c7d:7639:932a/xxxxxxxxxxxxxxxxxxxxxx # find it at https://app.husarnet.com
-COMPOSE_PROJECT_NAME=listener docker compose up
+user@host_A:~$ vim config.yaml
 ```
 
-in a second terminal run:
+with the following content:
+
+
+```yaml
+version: v3.0
+
+allowlist:
+  - name: "rt/chatter"
+    type: "std_msgs::msg::dds_::String_"
+
+participants:
+
+  - name: SimpleParticipant
+    kind: local
+    domain: 0
+
+  - name: ServerDSParticipant
+    kind: local-discovery-server
+    discovery-server-guid:
+      id: 200
+    listening-addresses:
+      - domain: host_A
+        port: 11811
+        transport: udp
+```
+
+3. Create a DDS Router config file on the `host_B`:
 
 ```bash
-export JOINCODE=fc94:b01d:1803:8dd8:b293:5c7d:7639:932a/xxxxxxxxxxxxxxxxxxxxxx # find it at https://app.husarnet.com
-COMPOSE_PROJECT_NAME=talker docker compose up
+user@host_B:~$ vim config.yaml
+```
+
+with the following content:
+
+
+```yaml
+version: v3.0
+
+allowlist:
+  - name: "rt/chatter"
+    type: "std_msgs::msg::dds_::String_"
+
+participants:
+
+  - name: SimpleParticipant
+    kind: local
+    domain: 0
+
+  - name: ClientDSParticipant
+    kind: local-discovery-server
+    discovery-server-guid:
+      id: 202
+    connection-addresses:
+      - discovery-server-guid:
+          id: 200
+        addresses:
+          - domain: host_A 
+            port: 11811
+            transport: udp
+```
+
+4. On both `host_A` and `host_B` execute (in the same folder as `config.yaml` file):
+
+```bash
+docker run --name dds-router \
+  --restart=unless-stopped \
+  --network host \
+  --ipc host \
+  --user $(id -u):$(id -g) \
+  -v $(pwd)/config.yaml:/config.yaml \
+  -v /etc/group:/etc/group:ro \
+  -v /etc/passwd:/etc/passwd:ro \
+  -v /etc/shadow:/etc/shadow:ro \
+  husarnet/dds-router:v2.0.0 bash -c "ddsrouter -c /config.yaml -r 10"
+```
+
+5. Start a chatter demo:
+
+- on the `host_A`:
+
+```bash
+export ROS_DOMAIN_ID=0
+ros2 run demo_nodes_cpp talker
+```
+
+- on the `host_B`:
+
+```bash
+export ROS_DOMAIN_ID=0
+ros2 run demo_nodes_cpp listener
 ```

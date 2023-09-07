@@ -4,6 +4,9 @@ on:
   push:
     paths-ignore:
       - 'demo/**'
+      - 'README.md'
+      - '.github/'
+  workflow_dispatch:
   
 jobs:
   build:
