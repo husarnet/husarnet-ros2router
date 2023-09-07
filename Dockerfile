@@ -31,9 +31,8 @@ RUN vcs import src < ddsrouter.repos && \
 # FROM ros:galactic-ros-core
 FROM ubuntu:20.04
 
-ENV DS_HOSTNAME=ds
-
 RUN apt-get update && apt-get install -y \
+        gettext-base \
         libyaml-cpp-dev \
         iputils-ping \
         python3.8 \
@@ -49,5 +48,12 @@ RUN apt-get update && apt-get install -y \
 COPY --from=ddsrouter_builder /dds_router /dds_router
 
 COPY entrypoint.sh /
+COPY config.client.template.yaml /
+COPY config.server.template.yaml /
+
+ENV ROS_DOMAIN_ID=0
+ENV DS_HOSTNAME=master
+ENV DS_ROLE=SERVER
 
 ENTRYPOINT [ "/entrypoint.sh" ]
+CMD [ "ddsrouter" ]

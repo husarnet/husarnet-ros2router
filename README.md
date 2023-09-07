@@ -103,3 +103,15 @@ ros2 run demo_nodes_cpp talker
 export ROS_DOMAIN_ID=0
 ros2 run demo_nodes_cpp listener
 ```
+
+<!-- ## devel cheatsheet
+
+```bash
+docker run --rm -it \
+  --network host \
+  --ipc host \
+  -v $(pwd)/config.client.template.yaml:/config.client.template.yaml \
+  -v $(pwd)/entrypoint.sh:/entrypoint.sh \
+  -e DS_HOSTNAME=rosbot2r \
+  husarnet/dds-router:v2.0.0 bash
+``` -->

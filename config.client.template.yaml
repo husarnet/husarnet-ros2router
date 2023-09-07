@@ -1,0 +1,23 @@
+version: v3.0
+
+allowlist:
+  - name: "rt/*"
+
+participants:
+
+  - name: SimpleParticipant
+    kind: local
+    domain: $ROS_DOMAIN_ID
+    transport: udp
+
+  - name: ClientDSParticipant
+    kind: local-discovery-server
+    discovery-server-guid:
+      id: 202
+    connection-addresses:
+      - discovery-server-guid:
+          id: 200
+        addresses:
+          - domain: $DS_HOSTNAME
+            port: 11811
+            transport: udp
