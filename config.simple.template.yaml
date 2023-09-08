@@ -13,8 +13,8 @@ participants:
   - name: RemoteParticipant
     kind: initial-peers
     listening-addresses:
-      - domain: master
+      - ip: 127.0.0.1
         port: 11811
     connection-addresses:
-      - domain: master
+      - ip: 127.0.0.1
         port: 11811

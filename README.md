@@ -111,6 +111,9 @@ docker run --rm -it \
   --network host \
   --ipc host \
   -v $(pwd)/config.client.template.yaml:/config.client.template.yaml \
+  -v $(pwd)/config.server.template.yaml:/config.server.template.yaml \
+  -v $(pwd)/config.simple.template.yaml:/config.simple.template.yaml \
+  -v $(pwd)/known_hosts_daemon.sh:/known_hosts_daemon.sh \
   -v $(pwd)/entrypoint.sh:/entrypoint.sh \
   -e DS_HOSTNAME=rosbot2r \
   husarnet/dds-router:v2.0.0 bash
