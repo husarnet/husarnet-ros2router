@@ -53,6 +53,6 @@ jobs:
       with:
         platforms: linux/amd64, linux/arm64
         push: true
-        tags: husarnet/dds-router-${{ github.head_ref || github.ref_name }}
+        tags: husarnet/dds-router:${{ github.head_ref || github.ref_name }}
         # cache-from: type=registry,ref=husarnet/dds-router-${{ github.head_ref || github.ref_name }}
         cache-to: type=inline
