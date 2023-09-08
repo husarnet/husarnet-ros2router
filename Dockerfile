@@ -28,8 +28,7 @@ RUN vcs import src < ddsrouter.repos && \
     git clone --branch release-1.11.0 https://github.com/google/googletest src/googletest-distribution && \
     colcon build
 
-# FROM ros:galactic-ros-core
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ARG TARGETARCH
 ARG YQ_VERSION=v4.35.1
@@ -41,9 +40,6 @@ RUN apt-get update && apt-get install -y \
         python3.8 \
         libtinyxml2-6 \
         python3 && \
-    # pip3 install -U \
-    #     pyyaml \
-    #     jsonschema && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
@@ -56,12 +52,12 @@ COPY --from=ddsrouter_builder /dds_router /dds_router
 COPY entrypoint.sh /
 COPY config.client.template.yaml /
 COPY config.server.template.yaml /
-COPY config.simple.template.yaml /
+COPY config.auto.template.yaml /
 COPY known_hosts_daemon.sh /
 
 ENV ROS_DOMAIN_ID=0
+ENV DISCOVERY=AUTO
 ENV DS_HOSTNAME=master
-ENV DS_ROLE=SERVER
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "ddsrouter" ]

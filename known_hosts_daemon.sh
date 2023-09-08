@@ -13,6 +13,9 @@ while true; do
         yq -i '.participants[1].connection-addresses += {"ip": env(address), "port": 11811} ' config.yaml 
     done
 
-    cp config.yaml DDS_ROUTER_CONFIGURATION.yaml
+    # mv is an atomic operation on POSIX systems (cp is not)
+    cp config.yaml DDS_ROUTER_CONFIGURATION.yaml.tmp && \
+    mv DDS_ROUTER_CONFIGURATION.yaml.tmp DDS_ROUTER_CONFIGURATION.yaml
+
     sleep 5
 done
