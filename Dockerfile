@@ -28,7 +28,7 @@ RUN vcs import src < ddsrouter.repos && \
     git clone --branch release-1.11.0 https://github.com/google/googletest src/googletest-distribution && \
     colcon build
 
-FROM ubuntu:22.04
+FROM ubuntu:20.04
 
 ARG TARGETARCH
 ARG YQ_VERSION=v4.35.1
