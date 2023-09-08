@@ -10,11 +10,11 @@ participants:
     domain: $ROS_DOMAIN_ID
     transport: udp
 
-  - name: ServerDSParticipant
-    kind: local-discovery-server
-    discovery-server-guid:
-      id: 200
+  - name: RemoteParticipant
+    kind: initial-peers
     listening-addresses:
-      - domain: $DS_HOSTNAME
+      - domain: master
         port: 11811
-        transport: udp
+    connection-addresses:
+      - domain: master
+        port: 11811

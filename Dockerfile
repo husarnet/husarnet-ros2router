@@ -31,8 +31,11 @@ RUN vcs import src < ddsrouter.repos && \
 # FROM ros:galactic-ros-core
 FROM ubuntu:20.04
 
+ARG TARGETARCH
+ARG YQ_VERSION=v4.35.1
+
 RUN apt-get update && apt-get install -y \
-        gettext-base \
+        curl \
         libyaml-cpp-dev \
         iputils-ping \
         python3.8 \
@@ -44,12 +47,17 @@ RUN apt-get update && apt-get install -y \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
+RUN curl -L https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${TARGETARCH} -o /usr/bin/yq && \
+    chmod +x /usr/bin/yq
+
 # COPY --from=ddsrouter_builder /dds_router/install /dds_router/install
 COPY --from=ddsrouter_builder /dds_router /dds_router
 
 COPY entrypoint.sh /
 COPY config.client.template.yaml /
 COPY config.server.template.yaml /
+COPY config.simple.template.yaml /
+COPY known_hosts_daemon.sh /
 
 ENV ROS_DOMAIN_ID=0
 ENV DS_HOSTNAME=master
