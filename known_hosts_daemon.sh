@@ -17,5 +17,8 @@ while true; do
     cp config.yaml DDS_ROUTER_CONFIGURATION.yaml.tmp && \
     mv DDS_ROUTER_CONFIGURATION.yaml.tmp DDS_ROUTER_CONFIGURATION.yaml
 
+    # we need to trigger the FileWatcher, because mv doesn't do that
+    echo "" >> DDS_ROUTER_CONFIGURATION.yaml
+    
     sleep 5
 done

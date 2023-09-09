@@ -5,7 +5,7 @@ on:
     paths-ignore:
       - 'demo/**'
       - 'README.md'
-      - '.github/'
+      - '.github/**'
   workflow_dispatch:
   
 jobs:
