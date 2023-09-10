@@ -1,0 +1,20 @@
+version: v3.0
+
+allowlist:
+  - name: "rt/*"
+
+participants:
+
+  - name: SimpleParticipant
+    kind: local
+    domain: $ROS_DOMAIN_ID
+    transport: udp
+
+  - name: RemoteParticipant
+    kind: initial-peers
+    listening-addresses:
+      - ip: 127.0.0.1
+        port: 11811
+    connection-addresses:
+      - ip: 127.0.0.1
+        port: 11811

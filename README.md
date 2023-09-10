@@ -2,7 +2,39 @@
 
 Fast DDS Router Docker image adjusted for Husarnet VPN.
 
-## Quick Start (Docker)
+## Quick Start (auto config)
+
+1. Connect both hosts to the same Husarnet network (eg. named `host_A` and `host_B`).
+
+2. On both `host_A` and `host_B` execute (in the same folder as `config.yaml` file):
+
+```bash
+docker run --rm -it \
+  --restart=unless-stopped \
+  --network host \
+  -e ROS_DOMAIN_ID \
+  husarnet/dds-router:v2.0.0
+```
+
+> `ROS_DOMAIN_ID` max value is `232`
+
+3. Start a chatter demo:
+
+- on the `host_A`:
+
+```bash
+export ROS_DOMAIN_ID=0
+ros2 run demo_nodes_cpp talker
+```
+
+- on the `host_B`:
+
+```bash
+export ROS_DOMAIN_ID=0
+ros2 run demo_nodes_cpp listener
+```
+
+## Quick Start (manual config)
 
 1. Connect both hosts to the same Husarnet network (eg. named `host_A` and `host_B`).
 
@@ -103,3 +135,18 @@ ros2 run demo_nodes_cpp talker
 export ROS_DOMAIN_ID=0
 ros2 run demo_nodes_cpp listener
 ```
+
+<!-- ## devel cheatsheet
+
+```bash
+docker run --rm -it \
+  --network host \
+  --ipc host \
+  -v $(pwd)/config.client.template.yaml:/config.client.template.yaml \
+  -v $(pwd)/config.server.template.yaml:/config.server.template.yaml \
+  -v $(pwd)/config.simple.template.yaml:/config.simple.template.yaml \
+  -v $(pwd)/known_hosts_daemon.sh:/known_hosts_daemon.sh \
+  -v $(pwd)/entrypoint.sh:/entrypoint.sh \
+  -e DS_HOSTNAME=rosbot2r \
+  husarnet/dds-router:v2.0.0 bash
+``` -->
