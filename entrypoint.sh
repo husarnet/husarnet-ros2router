@@ -4,10 +4,13 @@ set -e
 # setup dds router environment
 source "/dds_router/install/setup.bash"
 
-
 husarnet_api_response=$(curl -s http://127.0.0.1:16216/api/status)
 
 if [ "$(echo $husarnet_api_response | yq -r .result.is_ready)" == "true" ]; then
+
+    if [ -z "${ROS_DOMAIN_ID}" ]; then
+        export ROS_DOMAIN_ID=0
+    fi
 
     if [ "$DISCOVERY" == "SERVER" ]; then
         yq '.participants[1].listening-addresses[0].domain = strenv(DS_HOSTNAME)' config.server.template.yaml > DDS_ROUTER_CONFIGURATION.yaml

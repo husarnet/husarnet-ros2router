@@ -6,10 +6,10 @@ Fast DDS Router Docker image adjusted for Husarnet VPN.
 
 1. Connect both hosts to the same Husarnet network (eg. named `host_A` and `host_B`).
 
-2. On both `host_A` and `host_B` execute (in the same folder as `config.yaml` file):
+2. On both `host_A` and `host_B` execute:
 
 ```bash
-docker run --rm -it \
+docker run \
   --restart=unless-stopped \
   --network host \
   -e ROS_DOMAIN_ID \
