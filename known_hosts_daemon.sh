@@ -11,7 +11,15 @@ while true; do
         touch config.yaml.tmp
     fi
 
-    peers=$(curl -s http://127.0.0.1:16216/api/status | yq '.result.whitelist')
+    husarnet_api_response=$(curl -s http://127.0.0.1:16216/api/status)
+
+    if [[ $? -ne 0 ]]; then
+        echo "Failed to connect to Husarnet API endpoint."
+        pkill ddsrouter
+        exit 1
+    fi
+
+    peers=$(echo $husarnet_api_response | yq '.result.whitelist')
     peers_no=$(echo $peers | yq '. | length')
 
     for (( i=0; i<$peers_no; i++ )); do
