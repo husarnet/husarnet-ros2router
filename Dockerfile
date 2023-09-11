@@ -58,6 +58,7 @@ COPY known_hosts_daemon.sh /
 ENV ROS_DOMAIN_ID=0
 ENV DISCOVERY=AUTO
 ENV DS_HOSTNAME=master
+ENV USE_HUSARNET=TRUE
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "ddsrouter" ]
