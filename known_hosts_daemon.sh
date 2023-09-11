@@ -31,5 +31,8 @@ while true; do
         echo "" >> DDS_ROUTER_CONFIGURATION.yaml
     fi
 
+    # indicate that one loop is done
+    touch /tmp/loop_done_semaphore
+
     sleep 5
 done

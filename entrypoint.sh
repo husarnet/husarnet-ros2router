@@ -32,8 +32,14 @@ if [ "$(echo $husarnet_api_response | yq -r .result.is_ready)" == "true" ]; then
 
         cp DDS_ROUTER_CONFIGURATION.yaml DDS_ROUTER_CONFIGURATION_base.yaml
 
+        rm -f /tmp/loop_done_semaphore
+
         nohup ./known_hosts_daemon.sh &> known_hosts_daemon_logs.txt &
-        sleep 2
+
+        # wait for the semaphore indicating the loop has completed once
+        while [ ! -f /tmp/loop_done_semaphore ]; do
+            sleep 0.1  # short sleep to avoid hammering the filesystem
+        done
     fi
 else
     echo "Husarnet Daemon not available"
