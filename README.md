@@ -13,6 +13,7 @@ Fast DDS Router Docker image adjusted for Husarnet VPN.
 # export ROS_DOMAIN_ID=0
 
 docker run \
+  --detach \
   --restart=unless-stopped \
   --network host \
   -e ROS_DOMAIN_ID \
