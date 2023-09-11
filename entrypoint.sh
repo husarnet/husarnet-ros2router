@@ -33,6 +33,7 @@ if [ "$(echo $husarnet_api_response | yq -r .result.is_ready)" == "true" ]; then
         cp DDS_ROUTER_CONFIGURATION.yaml DDS_ROUTER_CONFIGURATION_base.yaml
 
         nohup ./known_hosts_daemon.sh &> known_hosts_daemon_logs.txt &
+        sleep 1
     fi
 else
     echo "Husarnet Daemon not available"
