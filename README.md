@@ -9,6 +9,9 @@ Fast DDS Router Docker image adjusted for Husarnet VPN.
 2. On both `host_A` and `host_B` execute:
 
 ```bash
+# Optionally, you can assign a domain ID within the range of 0 to 232.
+# export ROS_DOMAIN_ID=0
+
 docker run \
   --restart=unless-stopped \
   --network host \
@@ -16,21 +19,17 @@ docker run \
   husarnet/dds-router:v2.0.0
 ```
 
-> `ROS_DOMAIN_ID` max value is `232`
-
 3. Start a chatter demo:
 
 - on the `host_A`:
 
 ```bash
-export ROS_DOMAIN_ID=0
 ros2 run demo_nodes_cpp talker
 ```
 
 - on the `host_B`:
 
 ```bash
-export ROS_DOMAIN_ID=0
 ros2 run demo_nodes_cpp listener
 ```
 

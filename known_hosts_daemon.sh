@@ -1,8 +1,16 @@
 #!/bin/bash
 
 while true; do
-    cp config.yaml config.yaml.tmp
-    cp DDS_ROUTER_CONFIGURATION_base.yaml config.yaml
+    if [ -f config.yaml ]; then
+        # config.yaml exists
+        cp config.yaml config.yaml.tmp
+        cp DDS_ROUTER_CONFIGURATION_base.yaml config.yaml
+    else
+        # config.yaml does not exist
+        cp DDS_ROUTER_CONFIGURATION_base.yaml config.yaml
+        touch config.yaml.tmp
+    fi
+
     peers=$(curl -s http://127.0.0.1:16216/api/status | yq '.result.peers')
     peers_no=$(echo $peers | yq '. | length')
 
