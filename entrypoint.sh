@@ -51,8 +51,8 @@ else
         yq -i '.participants[0].transport = env(LOCAL_TRANSPORT)' DDS_ROUTER_CONFIGURATION.yaml
     fi
 
-    if [ "$DISCOVERY" == "AUTO" ]; then
-        cp config.auto.template.yaml DDS_ROUTER_CONFIGURATION.yaml
+    if [ "$DISCOVERY" == "WAN" ]; then
+        cp config.wan.template.yaml DDS_ROUTER_CONFIGURATION.yaml
 
         export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
         yq -i '.participants[1].listening-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION.yaml

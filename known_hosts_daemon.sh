@@ -22,6 +22,8 @@ while true; do
     peers=$(echo $husarnet_api_response | yq '.result.whitelist')
     peers_no=$(echo $peers | yq '. | length')
 
+    yq -i 'del(.participants[1].connection-addresses[0])' config.yaml 
+
     for (( i=0; i<$peers_no; i++ )); do
         # Extract husarnet_address for the current peer using jq
         export i
