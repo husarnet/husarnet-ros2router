@@ -52,7 +52,7 @@ COPY --from=ddsrouter_builder /dds_router /dds_router
 COPY entrypoint.sh /
 COPY config.client.template.yaml /
 COPY config.server.template.yaml /
-COPY config.auto.template.yaml /
+COPY config.wan.template.yaml /
 COPY known_hosts_daemon.sh /
 
 ENV ROS_DOMAIN_ID=0
