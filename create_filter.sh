@@ -32,6 +32,7 @@ for TOPIC in "$@"; do
     # Print entry for current topic
     echo "  - name: \"rt$TOPIC\""
     echo "    type: \"$DDS_TYPE\""
-    echo "blocklist:"
-    echo "builtin-topics:"
 done
+
+echo "blocklist:"
+echo "builtin-topics:"

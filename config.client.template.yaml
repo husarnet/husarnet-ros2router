@@ -9,7 +9,7 @@ participants:
 
   - name: SimpleParticipant
     kind: local
-    domain: $ROS_DOMAIN_ID
+    domain: 0
     transport: udp
 
   - name: ClientDSParticipant
@@ -20,6 +20,6 @@ participants:
       - discovery-server-guid:
           id: 200
         addresses:
-          - domain: $DS_HOSTNAME
+          - domain: master
             port: 11811
             transport: udp
