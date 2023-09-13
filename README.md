@@ -190,7 +190,25 @@ ros2 run demo_nodes_cpp listener
 
 ## Topic Filtering
 
-The repo contains the `create_filter.sh` script allowing you to automate the process of creating a DDS Router allowlist
+The repo contains the `create_filter.sh` script allowing you to automate the process of creating a DDS Router allowlist:
+
+```bash
+curl -s https://raw.githubusercontent.com/husarnet/dds-router/topic-filtering/create_filter.sh > create_filter.sh
+chmod +x create_filter.sh
+./create_filter.sh /chatter /cmd_vel > filter.yaml
+```
+
+Modify this `filter.yaml` file if needed and assign it as a bind mount volume:
+
+```bash
+docker run \
+--detach \
+--restart=unless-stopped \
+--network host \
+-v $(pwd)/filter.yaml:/filter.yaml \
+husarnet/dds-router:v2.0.0
+```
+
 
 <!-- ## devel cheatsheet
 
