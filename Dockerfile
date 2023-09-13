@@ -53,7 +53,8 @@ COPY entrypoint.sh /
 COPY config.client.template.yaml /
 COPY config.server.template.yaml /
 COPY config.wan.template.yaml /
-COPY known_hosts_daemon.sh /
+COPY filter.yaml /
+COPY config_daemon.sh /
 
 ENV ROS_DOMAIN_ID=0
 ENV DISCOVERY=WAN

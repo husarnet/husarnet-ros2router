@@ -2,6 +2,8 @@ version: v3.0
 
 allowlist:
   - name: "rt/*"
+blocklist:
+builtin-topics:
 
 participants:
 

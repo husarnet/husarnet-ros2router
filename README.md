@@ -14,7 +14,9 @@ Fast DDS Router Docker image adjusted for Husarnet VPN.
 
 
 
-## Quick Start (auto config)
+## Quick Start
+
+### Option 1: Initial Peers config
 
 1. Connect both hosts to the same Husarnet network (eg. named `host_A` and `host_B`).
 
@@ -42,7 +44,7 @@ ros2 run demo_nodes_cpp talker
 ros2 run demo_nodes_cpp listener
 ```
 
-## Quick Start (Discovery Server config)
+### Option 2: Discovery Server config
 
 1. Connect both hosts to the same Husarnet network (eg. named `host_A` and `host_B`).
 
@@ -84,7 +86,7 @@ ros2 run demo_nodes_cpp talker
 ros2 run demo_nodes_cpp listener
 ```
 
-## Quick Start (manual config)
+### Option 3: custom config
 
 1. Connect both hosts to the same Husarnet network (eg. named `host_A` and `host_B`).
 
@@ -185,6 +187,10 @@ ros2 run demo_nodes_cpp talker
 export ROS_DOMAIN_ID=0
 ros2 run demo_nodes_cpp listener
 ```
+
+## Topic Filtering
+
+The repo contains the `create_filter.sh` script allowing you to automate the process of creating a DDS Router allowlist
 
 <!-- ## devel cheatsheet
 

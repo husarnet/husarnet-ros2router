@@ -39,39 +39,38 @@ else
         export ROS_DOMAIN_ID=0
     fi
 
-    if [ "$DISCOVERY" == "SERVER" ]; then
-        yq '.participants[1].listening-addresses[0].domain = strenv(DS_HOSTNAME)' config.server.template.yaml >DDS_ROUTER_CONFIGURATION.yaml
-        yq -i '.participants[0].domain = env(ROS_DOMAIN_ID)' DDS_ROUTER_CONFIGURATION.yaml
-        yq -i '.participants[0].transport = env(LOCAL_TRANSPORT)' DDS_ROUTER_CONFIGURATION.yaml
-    fi
-
-    if [ "$DISCOVERY" == "CLIENT" ]; then
-        yq '.participants[1].connection-addresses[0].addresses[0].domain = strenv(DS_HOSTNAME)' config.client.template.yaml >DDS_ROUTER_CONFIGURATION.yaml
-        yq -i '.participants[0].domain = env(ROS_DOMAIN_ID)' DDS_ROUTER_CONFIGURATION.yaml
-        yq -i '.participants[0].transport = env(LOCAL_TRANSPORT)' DDS_ROUTER_CONFIGURATION.yaml
-    fi
-
-    if [ "$DISCOVERY" == "WAN" ]; then
-        cp config.wan.template.yaml DDS_ROUTER_CONFIGURATION.yaml
+    case $DISCOVERY in
+    SERVER)
+        yq '.participants[1].listening-addresses[0].domain = strenv(DS_HOSTNAME)' config.server.template.yaml >DDS_ROUTER_CONFIGURATION_base.yaml
+        ;;
+    CLIENT)
+        yq '.participants[1].connection-addresses[0].addresses[0].domain = strenv(DS_HOSTNAME)' config.client.template.yaml >DDS_ROUTER_CONFIGURATION_base.yaml
+        ;;
+    WAN)
+        cp config.wan.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
 
         export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
-        yq -i '.participants[1].listening-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION.yaml
-        yq -i '.participants[1].connection-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION.yaml
-        yq -i '.participants[0].domain = env(ROS_DOMAIN_ID)' DDS_ROUTER_CONFIGURATION.yaml
-        yq -i '.participants[0].transport = env(LOCAL_TRANSPORT)' DDS_ROUTER_CONFIGURATION.yaml
+        yq -i '.participants[1].listening-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants[1].connection-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION_base.yaml
+        ;;
+    *)
+        echo "Unknown DISCOVERY type"
+        exit 1
+        ;;
+    esac
 
-        cp DDS_ROUTER_CONFIGURATION.yaml DDS_ROUTER_CONFIGURATION_base.yaml
+    yq -i '.participants[0].domain = env(ROS_DOMAIN_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
+    yq -i '.participants[0].transport = env(LOCAL_TRANSPORT)' DDS_ROUTER_CONFIGURATION_base.yaml
 
-        rm -f config.yaml.tmp
-        rm -f /tmp/loop_done_semaphore
+    rm -f config.yaml.tmp
+    rm -f /tmp/loop_done_semaphore
 
-        nohup ./known_hosts_daemon.sh &>known_hosts_daemon_logs.txt &
+    nohup ./config_daemon.sh &>config_daemon_logs.txt &
 
-        # wait for the semaphore indicating the loop has completed once
-        while [ ! -f /tmp/loop_done_semaphore ]; do
-            sleep 0.1 # short sleep to avoid hammering the filesystem
-        done
-    fi
+    # wait for the semaphore indicating the loop has completed once
+    while [ ! -f /tmp/loop_done_semaphore ]; do
+        sleep 0.1 # short sleep to avoid hammering the filesystem
+    done
 
     exec "$@"
 fi
