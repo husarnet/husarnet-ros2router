@@ -34,5 +34,5 @@ for TOPIC in "$@"; do
     echo "    type: \"$DDS_TYPE\""
 done
 
-echo "blocklist:"
-echo "builtin-topics:"
+echo "blocklist: []"
+echo "builtin-topics: []"

@@ -1,4 +1,4 @@
 allowlist:
   - name: "rt/*"
-blocklist:
-builtin-topics:
+blocklist: []
+builtin-topics: []
