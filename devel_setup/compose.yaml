@@ -1,0 +1,21 @@
+# Quick start
+#
+# docker compose pull
+# docker compose up -d
+# docker compose exec dds_router bash 
+
+services:
+  dds_router:
+    image: husarnet/dds-router:topic-filtering
+    network_mode: host
+    ipc: host
+    volumes:
+      - ../entrypoint.sh:/entrypoint.sh
+      - ../config_daemon.sh:/config_daemon.sh
+      - ./filter.yaml:/filter.yaml
+    environment:
+      - ROS_DOMAIN_ID=0
+      - DISCOVERY=SERVER
+      - DS_HOSTNAME=master
+      - LOCAL_TRANSPORT=builtin
+    entrypoint: sleep 3600

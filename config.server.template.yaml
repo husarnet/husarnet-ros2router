@@ -15,7 +15,8 @@ participants:
   - name: ServerDSParticipant
     kind: local-discovery-server
     discovery-server-guid:
-      id: 200
+      ros-discovery-server: true
+      id: 0
     listening-addresses:
       - domain: master
         port: 11811

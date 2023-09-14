@@ -23,6 +23,8 @@ while true; do
     yq -i '.blocklist = load("filter.yaml").blocklist' config.yaml
     yq -i '.builtin-topics = load("filter.yaml").builtin-topics' config.yaml
 
+    export local_ip=$(echo $husarnet_api_response | yq .result.local_ip)
+
     if [ "$DISCOVERY" == "WAN" ]; then
         peers=$(echo $husarnet_api_response | yq '.result.whitelist')
         peers_no=$(echo $peers | yq '. | length')
@@ -34,7 +36,9 @@ while true; do
             export i
             export address=$(echo $peers | yq -r '.[env(i)]')
 
-            yq -i '.participants[1].connection-addresses += {"ip": env(address), "port": 11811} ' config.yaml
+            if [ "$local_ip" != "$address" ]; then
+                yq -i '.participants[1].connection-addresses += {"ip": env(address), "port": 11811} ' config.yaml
+            fi
         done
     fi
 

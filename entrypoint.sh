@@ -42,9 +42,12 @@ else
     case $DISCOVERY in
     SERVER)
         yq '.participants[1].listening-addresses[0].domain = strenv(DS_HOSTNAME)' config.server.template.yaml >DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants[1].discovery-server-guid.id = env(DS_SERVER_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
         ;;
     CLIENT)
         yq '.participants[1].connection-addresses[0].addresses[0].domain = strenv(DS_HOSTNAME)' config.client.template.yaml >DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants[1].discovery-server-guid.id = env(DS_CLIENT_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants[1].connection-addresses[0].discovery-server-guid.id = env(DS_SERVER_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
         ;;
     WAN)
         cp config.wan.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml

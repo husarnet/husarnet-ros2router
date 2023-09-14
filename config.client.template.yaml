@@ -15,10 +15,12 @@ participants:
   - name: ClientDSParticipant
     kind: local-discovery-server
     discovery-server-guid:
-      id: 202
+      ros-discovery-server: true
+      id: 1
     connection-addresses:
       - discovery-server-guid:
-          id: 200
+          ros-discovery-server: true
+          id: 0
         addresses:
           - domain: master
             port: 11811

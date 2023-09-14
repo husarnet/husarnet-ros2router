@@ -1,0 +1,9 @@
+# create_filter.sh /chatter /rosout > devel_setup/filter.yaml
+
+allowlist:
+  - name: "rt/chatter"
+    type: "std_msgs::msg::dds_::String_"
+blocklist:
+  - name: "rt/rosout"
+    type: "rcl_interfaces::msg::dds_::Log_"
+builtin-topics: []
