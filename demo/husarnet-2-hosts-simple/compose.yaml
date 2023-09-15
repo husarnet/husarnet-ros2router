@@ -12,6 +12,8 @@ services:
     volumes:
       - ./router-config-simple.yaml:/config.yaml
       # - ./router-config-${COMPOSE_PROJECT_NAME}.yaml:/config.yaml
+    environment:
+      - AUTO_CONFIG=FALSE
     command: ddsrouter -c /config.yaml -r 10
 
   husarnet:

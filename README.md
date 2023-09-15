@@ -1,17 +1,22 @@
 # dds-router
 
-Fast DDS Router Docker image adjusted for Husarnet VPN.
+Fast DDS Router Docker image with auto-configuration for Husarnet VPN.
 
 ## Environment Variables
 
-| env | default value | available values |
-| - | - | - |
-| `ROS_DOMAIN_ID` | `0` | from `0` to `232` |
-| `DISCOVERY` | `WAN` | `WAN` for the [WAN Participant (initial peers)](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/wan.html#user-manual-participants-wan) setup, `SERVER` or `CLIENT` for [Local Discovery Server Participant](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/local_discovery_server.html#user-manual-participants-local-discovery-server) setup |
-| `DS_HOSTNAME` | `master` | The Husarnet hostname of the device with `DISCOVERY=SERVER` (you need to specify the same `DS_HOSTNAME` both on `SERVER` and `CLIENT` device). Don't use if `DISCOVERY=WAN` |
-| `LOCAL_TRANSPORT` | `udp` | `udp` for UDP based local DDS setup, `builtin` for a shared memory based local DDS setup (if using `builtin` with `--network host`, remember to add also `--ipc host `) |
-| `USE_HUSARNET` | `TRUE` | `TRUE` or `FALSE` |
+### general
 
+| env | default value | description |
+| - | - | - |
+| `AUTO_CONFIG` | `TRUE` | If set to `TRUE` the `DDS_ROUTER_CONFIGURATION.yaml` will be created automatically based on all others environemt variables. Set it to `FALSE` to use a custom DDS Router config instead **ignoring all others environemt variables**. |
+| `USE_HUSARNET` | `TRUE` | If set to `TRUE` the DDS Router configuration file will be filled with Husarnet peers addresses. If set to `FALSE` the DDS Router will work only in the local network using a default DDS simple discovery protocol. In this case the domain id for the first participant is set to `ROS_DOMAIN_ID` variable value, and the domain id for the second participant is always `0`. If `ROS_DOMAIN_ID=0`, then the domain id for the first participant is set to `77` (there could not be two participants with domain id equals to `0`). |
+| `FAIL_IF_HUSARNET_NOT_AVAILABLE` | `FALSE` | If set to `FALSE` and can't reach Husarnet Daemon HTTP API the system behaviour is the same as if `USE_HUSARNET=FALSE`. If set to `TRUE` the container is stopped in case of no Husarnet Daemon API connection. |
+| `ROS_DOMAIN_ID` | `0` | from `0` to `232`. |
+| `LOCAL_TRANSPORT` | `udp` | `udp` for UDP based local DDS setup, `builtin` for a shared memory based local DDS setup (if using `builtin` with `--network host`, remember to add also `--ipc host `). |
+| `DISCOVERY` | `WAN` | `WAN` for the [WAN Participant (initial peers)](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/wan.html#user-manual-participants-wan) setup, `SERVER` or `CLIENT` for [Local Discovery Server Participant](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/local_discovery_server.html#user-manual-participants-local-discovery-server) setup. |
+| `DS_HOSTNAME` | `master` | The Husarnet hostname of the device with `DISCOVERY=SERVER` (you need to specify the same `DS_HOSTNAME` both on `SERVER` and `CLIENT` devices). Don't use it if `DISCOVERY=WAN`. |
+| `DS_CLIENT_ID` | `1` | The ID of the client if `DISCOVERY=CLIENT`. Each client conntected to the Discovery Server need to has a differnet `DS_CLIENT_ID`. Don't use it if `DISCOVERY=WAN`. |
+| `DS_SERVER_ID` | `0` | The ID of the server. You need to set if both `DISCOVERY=CLIENT` or `DISCOVERY=SERVER`. Don't use it if `DISCOVERY=WAN`. |
 
 
 ## Quick Start
@@ -170,6 +175,7 @@ docker run --name dds-router \
   -v /etc/group:/etc/group:ro \
   -v /etc/passwd:/etc/passwd:ro \
   -v /etc/shadow:/etc/shadow:ro \
+  -e AUTO_CONFIG=FALSE \
   husarnet/dds-router:v2.0.0 bash -c "ddsrouter -c /config.yaml -r 10"
 ```
 
