@@ -4,20 +4,118 @@ Fast DDS Router Docker image with auto-configuration for Husarnet VPN.
 
 ## Environment Variables
 
-### general
-
 | env | default value | description |
 | - | - | - |
-| `AUTO_CONFIG` | `TRUE` | If set to `TRUE` the `DDS_ROUTER_CONFIGURATION.yaml` will be created automatically based on all others environemt variables. Set it to `FALSE` to use a custom DDS Router config instead **ignoring all others environemt variables**. |
-| `USE_HUSARNET` | `TRUE` | If set to `TRUE` the DDS Router configuration file will be filled with Husarnet peers addresses. If set to `FALSE` the DDS Router will work only in the local network using a default DDS simple discovery protocol. In this case the domain id for the first participant is set to `ROS_DOMAIN_ID` variable value, and the domain id for the second participant is always `0`. If `ROS_DOMAIN_ID=0`, then the domain id for the first participant is set to `77` (there could not be two participants with domain id equals to `0`). |
-| `FAIL_IF_HUSARNET_NOT_AVAILABLE` | `FALSE` | If set to `FALSE` and can't reach Husarnet Daemon HTTP API the system behaviour is the same as if `USE_HUSARNET=FALSE`. If set to `TRUE` the container is stopped in case of no Husarnet Daemon API connection. |
+| `AUTO_CONFIG` | `TRUE` | If set to `TRUE``, the `DDS_ROUTER_CONFIGURATION.yaml`` will be automatically generated using all other environment variables. Set to `FALSE`` to use a custom DDS Router configuration, **bypassing all other environment variables** |
+| `USE_HUSARNET` | `TRUE` | When set to `TRUE`, the DDS Router configuration file populates with Husarnet peers addresses. If `FALSE`, the DDS Router operates solely within the local network, defaulting to the DDS simple discovery protocol. In this scenario, the first participant's domain id is `ROS_DOMAIN_ID`, while the second participant's domain id is consistently `0`. However, if `ROS_DOMAIN_ID=0`, the first participant's domain id defaults to `77` to prevent both participants from having a domain id of `0`. |
+| `FAIL_IF_HUSARNET_NOT_AVAILABLE` | `FALSE` | When set to `FALSE`, if the Husarnet Daemon HTTP API is unreachable, the system behaves as though USE_HUSARNET=FALSE. When set to `TRUE`, the container stops if it cannot connect to the Husarnet Daemon API. |
 | `ROS_DOMAIN_ID` | `0` | from `0` to `232`. |
 | `LOCAL_TRANSPORT` | `udp` | `udp` for UDP based local DDS setup, `builtin` for a shared memory based local DDS setup (if using `builtin` with `--network host`, remember to add also `--ipc host `). |
 | `DISCOVERY` | `WAN` | `WAN` for the [WAN Participant (initial peers)](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/wan.html#user-manual-participants-wan) setup, `SERVER` or `CLIENT` for [Local Discovery Server Participant](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/local_discovery_server.html#user-manual-participants-local-discovery-server) setup. |
-| `DS_HOSTNAME` | `master` | The Husarnet hostname of the device with `DISCOVERY=SERVER` (you need to specify the same `DS_HOSTNAME` both on `SERVER` and `CLIENT` devices). Don't use it if `DISCOVERY=WAN`. |
+| `DS_HOSTNAME` | `master` | Use the `DS_HOSTNAME` to specify the Husarnet hostname for devices set with `DISCOVERY=SERVER`. Ensure that both `SERVER` and `CLIENT` devices have the same `DS_HOSTNAME`. Ignored when `DISCOVERY=WAN`. |
 | `DS_CLIENT_ID` | `1` | The ID of the client if `DISCOVERY=CLIENT`. Each client conntected to the Discovery Server need to has a differnet `DS_CLIENT_ID`. Don't use it if `DISCOVERY=WAN`. |
-| `DS_SERVER_ID` | `0` | The ID of the server. You need to set if both `DISCOVERY=CLIENT` or `DISCOVERY=SERVER`. Don't use it if `DISCOVERY=WAN`. |
+| `DS_SERVER_ID` | `0` | Specify the server's ID by setting it for both `DISCOVERY=CLIENT` and `DISCOVERY=SERVER`. Do not use this setting if DISCOVERY=WAN. |
 
+## Example Setups
+
+### Setup 1
+
+Husarnet operates on the Host OS. ROS 2 nodes on the host use `ROS_DOMAIN_ID=1`, and the goal is to ensure all ROS 2 topics are accessible to other peers in the Husarnet network. The DDS Router should also restart with each reboot of the host OS.
+
+1. Docker Compose
+
+```yaml
+services:
+  ddsrouter:
+    image: husarnet/dds-router:v2.0.0
+    restart: always
+    network_mode: host
+    environment:
+      - ROS_DOMAIN_ID=1
+```
+
+2. Docker run
+
+```bash
+docker run --name ddsrouter \
+--restart always \
+--network host \
+-e ROS_DOMAIN_ID=1 \
+husarnet/dds-router:v2.0.0
+```
+
+### Setup 2
+
+Husarnet operates on the Host OSes with hostnames `host_a` and `host_b`, and `host_c`. The goal is to ensure all ROS 2 topics are accessible to other peers in the Husarnet network. We want to use a Discovery Server setup, where `host_a` is a server, and `host_b` and `host_c` are clients.
+
+```mermaid
+graph TD;
+    host_b-->host_a;
+    host_c-->host_a;
+```
+
+1. `compose.yaml` for `host_a`:
+
+```yaml
+services:
+  ddsrouter:
+    image: husarnet/dds-router:v2.0.0
+    network_mode: host
+    environment:
+      - DISCOVERY=SERVER
+      - DS_HOSTNAME=host_a
+```
+
+2. `compose.yaml` for `host_b`:
+
+```yaml
+services:
+  ddsrouter:
+    image: husarnet/dds-router:v2.0.0
+    network_mode: host
+    environment:
+      - DISCOVERY=CLIENT
+      - DS_HOSTNAME=host_a
+      - DS_CLIENT_ID=1
+```
+
+3. `compose.yaml` for `host_c`:
+
+```yaml
+services:
+  ddsrouter:
+    image: husarnet/dds-router:v2.0.0
+    network_mode: host
+    environment:
+      - DISCOVERY=CLIENT
+      - DS_HOSTNAME=host_a
+      - DS_CLIENT_ID=2
+```
+
+### Setup 3
+
+Husarnet runs on the Host OS. While ROS 2 nodes on the are in `ROS_DOMAIN_ID=0` (default), the aim is to make only the `/chatter` topic available to other peers within the Husarnet network.
+
+1. `compose.yaml`
+
+```yaml
+services:
+  ddsrouter:
+    image: husarnet/dds-router:v2.0.0
+    network_mode: host
+    volumes:
+      - ./filter.yaml:/filter.yaml
+```
+
+2. `filter.yaml`
+
+```yaml
+allowlist:
+  - name: "rt/chatter"
+    type: "std_msgs::msg::dds_::String_"
+blocklist: []
+builtin-topics: []
+```
 
 ## Quick Start
 
@@ -216,20 +314,3 @@ docker run \
 -v $(pwd)/filter.yaml:/filter.yaml \
 husarnet/dds-router:v2.0.0
 ```
-
-
-
-<!-- ## devel cheatsheet
-
-```bash
-docker run --rm -it \
-  --network host \
-  --ipc host \
-  -v $(pwd)/config.client.template.yaml:/config.client.template.yaml \
-  -v $(pwd)/config.server.template.yaml:/config.server.template.yaml \
-  -v $(pwd)/config.simple.template.yaml:/config.simple.template.yaml \
-  -v $(pwd)/known_hosts_daemon.sh:/known_hosts_daemon.sh \
-  -v $(pwd)/entrypoint.sh:/entrypoint.sh \
-  -e DS_HOSTNAME=rosbot2r \
-  husarnet/dds-router:v2.0.0 bash
-``` -->
