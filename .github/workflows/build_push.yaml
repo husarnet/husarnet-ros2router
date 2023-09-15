@@ -19,6 +19,10 @@ jobs:
     - name: Parse the DDSRouter version
       run: echo "DDSROUTER_VERSION=$(yq '.repositories.ddsrouter.version' ddsrouter.repos)" >> $GITHUB_ENV
 
+    - name: Set SHORT_DATE env
+      run: echo "SHORT_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
+      shell: bash
+
     - name: Print the DDSRouter version
       run: echo ${{ env.DDSROUTER_VERSION }}
 
@@ -43,7 +47,10 @@ jobs:
       with:
         platforms: linux/amd64, linux/arm64
         push: true
-        tags: husarnet/dds-router:${{ env.DDSROUTER_VERSION }}, husarnet/dds-router
+        tags: |
+          husarnet/dds-router:${{ env.DDSROUTER_VERSION }}-${{ env.SHORT_DATE }}
+          husarnet/dds-router:${{ env.DDSROUTER_VERSION }}
+          husarnet/dds-router
         # cache-from: type=registry,ref=husarnet/dds-router
         cache-to: type=inline
 
