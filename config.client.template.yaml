@@ -2,22 +2,26 @@ version: v3.0
 
 allowlist:
   - name: "rt/*"
+blocklist: []
+builtin-topics: []
 
 participants:
 
   - name: SimpleParticipant
     kind: local
-    domain: $ROS_DOMAIN_ID
+    domain: 0
     transport: udp
 
   - name: ClientDSParticipant
     kind: local-discovery-server
     discovery-server-guid:
-      id: 202
+      ros-discovery-server: true
+      id: 1
     connection-addresses:
       - discovery-server-guid:
-          id: 200
+          ros-discovery-server: true
+          id: 0
         addresses:
-          - domain: $DS_HOSTNAME
+          - domain: master
             port: 11811
             transport: udp

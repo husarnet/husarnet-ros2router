@@ -17,6 +17,8 @@ services:
       - inter_net
     volumes:
       - ./router-config.listener.yaml:/config.yaml
+    environment:
+      - AUTO_CONFIG=FALSE
     command: bash -c "ddsrouter -c /config.yaml -r 10"
 
 # ================================================
@@ -36,6 +38,8 @@ services:
       - inter_net
     volumes:
       - ./router-config.talker.yaml:/config.yaml
+    environment:
+      - AUTO_CONFIG=FALSE
     command: bash -c "ddsrouter -c /config.yaml -r 10"
 
 networks:

@@ -2,12 +2,14 @@ version: v3.0
 
 allowlist:
   - name: "rt/*"
+blocklist: []
+builtin-topics: []
 
 participants:
 
   - name: SimpleParticipant
     kind: local
-    domain: $ROS_DOMAIN_ID
+    domain: 0
     transport: udp
 
   - name: RemoteParticipant
