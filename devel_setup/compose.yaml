@@ -6,13 +6,17 @@
 
 services:
   dds_router:
-    image: husarnet/dds-router:topic-filtering
+    image: husarnet/dds-router:v2.0.0
     network_mode: host
     ipc: host
     volumes:
-      - ../entrypoint.sh:/entrypoint.sh
+      - ../config.client.template.yaml:/config.client.template.yaml
+      - ../config.server.template.yaml:/config.server.template.yaml
+      - ../config.wan.template.yaml:/config.wan.template.yaml
+      - ../config.local.template.yaml:/config.local.template.yaml
       - ../config_daemon.sh:/config_daemon.sh
-      - ./filter.yaml:/filter.yaml
+      - ../entrypoint.sh:/entrypoint.sh
+      - ../filter.yaml:/filter.yaml
     environment:
       - ROS_DOMAIN_ID=0
       - DISCOVERY=SERVER

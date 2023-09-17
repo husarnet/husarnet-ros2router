@@ -22,6 +22,6 @@ participants:
           ros-discovery-server: true
           id: 0
         addresses:
-          - domain: master
+          - ip: 127.0.0.1
             port: 11811
             transport: udp
