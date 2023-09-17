@@ -20,7 +20,8 @@ while true; do
             exit 1
         fi
 
-        if [[ "$DISCOVERY" == "WAN" ]]; then
+        # check if we are in Initial Peers (WAN) config
+        if [ -z "${DISCOVERY_SERVER_PORT}" ] && [ -z "${ROS_DISCOVERY_SERVER}" ]; then
             export local_ip=$(echo $husarnet_api_response | yq .result.local_ip)
 
             peers=$(echo $husarnet_api_response | yq '.result.whitelist')

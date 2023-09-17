@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# is_ipv6() {
-#     local ip=$1
-#     # Simple regex to validate IPv6 format
-#     local ipv6_regex="^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}$"
-#     [[ $ip =~ $ipv6_regex ]]
-# }
-
 create_config_husarnet() {
     if [ -z "${ROS_DOMAIN_ID}" ]; then
         export ROS_DOMAIN_ID=0
@@ -63,8 +56,8 @@ create_config_husarnet() {
 
                 yq '.participants[1].connection-addresses[0].addresses[0].ip = strenv(HOST)' config.client.template.yaml >DDS_ROUTER_CONFIGURATION_base.yaml
                 yq -i '.participants[1].connection-addresses[0].addresses[0].port = env(PORT)' DDS_ROUTER_CONFIGURATION_base.yaml
-                yq -i '.participants[1].discovery-server-guid.id = env(DS_CLIENT_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
-                yq -i '.participants[1].connection-addresses[0].discovery-server-guid.id = env(DS_SERVER_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
+                yq -i '.participants[1].discovery-server-guid.id = env(CLIENT_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
+                yq -i '.participants[1].connection-addresses[0].discovery-server-guid.id = env(SERVER_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
 
                 echo "ROS_DISCOVERY_SERVER is set with HOST: $HOST and PORT: $PORT."
             else
@@ -80,6 +73,7 @@ create_config_husarnet() {
             export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
             yq '.participants[1].listening-addresses[0].ip = strenv(LOCAL_IP)' config.server.template.yaml >DDS_ROUTER_CONFIGURATION_base.yaml
             yq -i '.participants[1].listening-addresses[0].port = env(DISCOVERY_SERVER_PORT)' DDS_ROUTER_CONFIGURATION_base.yaml
+            yq -i '.participants[1].discovery-server-guid.id = env(SERVER_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
         else
             echo "DISCOVERY_SERVER_PORT value is not a valid number or is greater than or equal to 65535."
             # Insert other commands here if needed
@@ -89,14 +83,8 @@ create_config_husarnet() {
 }
 
 create_config_local() {
-    if [[ -z "${ROS_DOMAIN_ID}" || "${ROS_DOMAIN_ID}" -eq 0 ]]; then
-        export ROS_DOMAIN_ID=77
-
-        echo "In LAN setup ROS_DOMAIN_ID can't be 0"
-        echo "Starting with ROS_DOMAIN_ID=$ROS_DOMAIN_ID"
-    fi
-
     cp config.local.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
+    yq -i '.participants[1].domain = env(ROS_DOMAIN_ID_2)' DDS_ROUTER_CONFIGURATION_base.yaml
 }
 
 if [[ $AUTO_CONFIG == "TRUE" ]]; then
@@ -161,12 +149,12 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
     rm -f config.yaml.tmp
     rm -f /tmp/loop_done_semaphore
 
-    # nohup ./config_daemon.sh &>config_daemon_logs.txt &
+    nohup ./config_daemon.sh &>config_daemon_logs.txt &
 
-    # # wait for the semaphore indicating the loop has completed once
-    # while [ ! -f /tmp/loop_done_semaphore ]; do
-    #     sleep 0.1 # short sleep to avoid hammering the filesystem
-    # done
+    # wait for the semaphore indicating the loop has completed once
+    while [ ! -f /tmp/loop_done_semaphore ]; do
+        sleep 0.1 # short sleep to avoid hammering the filesystem
+    done
 
 fi
 
