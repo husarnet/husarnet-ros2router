@@ -8,7 +8,6 @@ create_config_husarnet() {
     # Check if DISCOVERY_SERVER_PORT environment variable exists
     if [ -z "${DISCOVERY_SERVER_PORT}" ]; then
         # DISCOVERY_SERVER_PORT is not set.
-        echo "Launching ROS Discovery Server - Client config"
 
         # Check if ROS_DISCOVERY_SERVER environment variable exists
         if [ -z "${ROS_DISCOVERY_SERVER}" ]; then
@@ -20,6 +19,7 @@ create_config_husarnet() {
             yq -i '.participants[1].listening-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION_base.yaml
             yq -i '.participants[1].connection-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION_base.yaml
         else
+            echo "Launching ROS Discovery Server - Client config"
             # Regular expression to match hostname:port or [ipv6addr]:port
             regex="^(([a-zA-Z0-9-]+):([0-9]+)|\[(([a-fA-F0-9]{1,4}:){1,7}[a-fA-F0-9]{1,4}|[a-fA-F0-9]{0,4})\]:([0-9]+))$"
 
@@ -86,7 +86,11 @@ create_config_husarnet() {
         # Check if the value is a number and smaller than 65535
         if [[ "$DISCOVERY_SERVER_PORT" =~ ^[0-9]+$ && $DISCOVERY_SERVER_PORT -lt 65535 ]]; then
             # DISCOVERY_SERVER_PORT is set and its value is smaller than 65535.
+            
             export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
+
+            echo "On different hosts, set the ROS_DISCOVERY_SERVER=[$LOCAL_IP]:$DISCOVERY_SERVER_PORT"
+
             yq '.participants[1].listening-addresses[0].ip = strenv(LOCAL_IP)' config.server.template.yaml >DDS_ROUTER_CONFIGURATION_base.yaml
             yq -i '.participants[1].listening-addresses[0].port = env(DISCOVERY_SERVER_PORT)' DDS_ROUTER_CONFIGURATION_base.yaml
             yq -i '.participants[1].discovery-server-guid.id = env(SERVER_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
@@ -166,6 +170,7 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
     rm -f /tmp/loop_done_semaphore
 
     # Start a config_daemon
+    rm -f config_daemon_logs_pipe
     mkfifo config_daemon_logs_pipe
     cat <config_daemon_logs_pipe &
     pkill -f config_daemon.sh
