@@ -167,9 +167,9 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
 
     # Start a config_daemon
     mkfifo config_daemon_logs_pipe
-    cat < config_daemon_logs_pipe &
+    cat <config_daemon_logs_pipe &
     pkill -f config_daemon.sh
-    nohup ./config_daemon.sh > config_daemon_logs_pipe 2>&1 &
+    nohup ./config_daemon.sh >config_daemon_logs_pipe 2>&1 &
     # nohup ./config_daemon.sh &>config_daemon_logs.txt &
 
     # wait for the semaphore indicating the loop has completed once
