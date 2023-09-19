@@ -8,10 +8,11 @@ create_config_husarnet() {
     # Check if DISCOVERY_SERVER_PORT environment variable exists
     if [ -z "${DISCOVERY_SERVER_PORT}" ]; then
         # DISCOVERY_SERVER_PORT is not set.
+        echo "Launching ROS Discovery Server - Client config"
 
         # Check if ROS_DISCOVERY_SERVER environment variable exists
         if [ -z "${ROS_DISCOVERY_SERVER}" ]; then
-            echo "ROS_DISCOVERY_SERVER is not set. Defaulting to Initial Peers config"
+            echo "Launching Initial Peers config"
 
             cp config.wan.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
 
@@ -44,14 +45,28 @@ create_config_husarnet() {
 
                     # Extract all IP addresses from the host_table
                     IP_ADDRESSES=$(echo $husarnet_api_response | yq '.result.host_table[]')
-                    # Check if the HOST IP exists in the IP_ADDRESSES list
-                    if echo "$IP_ADDRESSES" | grep -q "$HOST"; then
-                        echo "Address found: $HOST"
+
+                    # Iterate over each address in IP_ADDRESSES
+                    address_found=false
+                    IFS=$'\n' # Set Internal Field Separator to newline for the loop
+                    for address in $IP_ADDRESSES; do
+                        if [[ "$address" == "$HOST" ]]; then
+                            address_found=true
+                            break
+                        fi
+                    done
+
+                    if $address_found; then
                         export HOST
                     else
-                        echo "Address not found in the host_table."
+                        echo "Error: $HOST address not found"
                         exit 1
                     fi
+                fi
+
+                if [[ ! ($PORT -le 65535) ]]; then
+                    echo "Discovery Server Port is not a valid number or is outside the valid range (0-65535)."
+                    exit 1
                 fi
 
                 yq '.participants[1].connection-addresses[0].addresses[0].ip = strenv(HOST)' config.client.template.yaml >DDS_ROUTER_CONFIGURATION_base.yaml
@@ -67,6 +82,7 @@ create_config_husarnet() {
         fi
 
     else
+        echo "Launching ROS Discovery Server - Server config"
         # Check if the value is a number and smaller than 65535
         if [[ "$DISCOVERY_SERVER_PORT" =~ ^[0-9]+$ && $DISCOVERY_SERVER_PORT -lt 65535 ]]; then
             # DISCOVERY_SERVER_PORT is set and its value is smaller than 65535.
@@ -103,7 +119,7 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
                 if [ "$(echo $husarnet_api_response | yq -r .result.is_ready)" != "true" ]; then
                     if [[ $i -eq 7 ]]; then
                         echo "Husarnet API is not ready."
-                        if [[ $FAIL_IF_HUSARNET_NOT_AVAILABLE == "TRUE" ]]; then
+                        if [[ $EXIT_IF_HUSARNET_NOT_AVAILABLE == "TRUE" ]]; then
                             echo "Exiting."
                             exit 1
                         else
@@ -125,7 +141,7 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
             else
                 if [[ $i -eq 5 ]]; then
                     echo "Can't reach Husarnet Daemon HTTP API after 5 retries"
-                    if [[ $FAIL_IF_HUSARNET_NOT_AVAILABLE == "TRUE" ]]; then
+                    if [[ $EXIT_IF_HUSARNET_NOT_AVAILABLE == "TRUE" ]]; then
                         echo "Exiting."
                         exit 1
                     else
@@ -149,7 +165,12 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
     rm -f config.yaml.tmp
     rm -f /tmp/loop_done_semaphore
 
-    nohup ./config_daemon.sh &>config_daemon_logs.txt &
+    # Start a config_daemon
+    mkfifo config_daemon_logs_pipe
+    cat < config_daemon_logs_pipe &
+    pkill -f config_daemon.sh
+    nohup ./config_daemon.sh > config_daemon_logs_pipe 2>&1 &
+    # nohup ./config_daemon.sh &>config_daemon_logs.txt &
 
     # wait for the semaphore indicating the loop has completed once
     while [ ! -f /tmp/loop_done_semaphore ]; do
