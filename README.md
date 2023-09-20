@@ -18,8 +18,6 @@ Fast DDS Router Docker image with auto-configuration for Husarnet VPN.
 | `EXIT_IF_HOST_TABLE_CHANGED` | `FALSE` | Valid only if `DISCOVERY_SERVER_PORT` and `ROS_DISCOVERY_SERVER` envs are unset and thus starting the **Initial Peers** config. This env is useful in connection with `restart: always` Docker policy - it restarts the DDS Router with a new Initial Peers list applied (the Initial Peers list is not updated by the DDS Router in runtime)  |
 | `LOCAL_TRANSPORT` | `udp` | `udp` for UDP based local DDS setup, `builtin` for a shared memory based local DDS setup (if using `builtin` with `--network host`, remember to add also `--ipc host `). |
 
-
-
 ## Example Setups
 
 ### Setup 1
@@ -52,12 +50,6 @@ husarnet/dds-router:v2.0.0
 
 Husarnet operates on the Host OSes with hostnames `host_a` and `host_b`, and `host_c`. The goal is to ensure all ROS 2 topics are accessible to other peers in the Husarnet network. We want to use a Discovery Server setup, where `host_a` is a server, and `host_b` and `host_c` are clients.
 
-```mermaid
-graph TD;
-    host_b-->host_a;
-    host_c-->host_a;
-```
-
 1. `compose.yaml` for `host_a`:
 
 ```yaml
@@ -66,8 +58,7 @@ services:
     image: husarnet/dds-router:v2.0.0
     network_mode: host
     environment:
-      - DISCOVERY=SERVER
-      - DS_HOSTNAME=host_a
+      - DISCOVERY_SERVER_PORT=11888
 ```
 
 2. `compose.yaml` for `host_b`:
@@ -78,8 +69,7 @@ services:
     image: husarnet/dds-router:v2.0.0
     network_mode: host
     environment:
-      - DISCOVERY=CLIENT
-      - DS_HOSTNAME=host_a
+      - ROS_DISCOVERY_SERVER="host_a:11888"
       - DS_CLIENT_ID=1
 ```
 
@@ -91,8 +81,7 @@ services:
     image: husarnet/dds-router:v2.0.0
     network_mode: host
     environment:
-      - DISCOVERY=CLIENT
-      - DS_HOSTNAME=host_a
+      - ROS_DISCOVERY_SERVER="host_a:11888"
       - DS_CLIENT_ID=2
 ```
 
@@ -125,9 +114,9 @@ builtin-topics: []
 
 ### Option 1: Initial Peers config
 
-1. Connect both hosts to the same Husarnet network (eg. named `host_A` and `host_B`).
+1. Connect both hosts to the same Husarnet network (eg. named `host_a` and `host_b`).
 
-2. On both `host_A` and `host_B` execute:
+2. On both `host_a` and `host_b` execute:
 
 ```bash
 docker run \
@@ -140,13 +129,13 @@ husarnet/dds-router:v2.0.0
 
 3. Start a chatter demo:
 
-- on the `host_A`:
+- on the `host_a`:
 
 ```bash
 ros2 run demo_nodes_cpp talker
 ```
 
-- on the `host_B`:
+- on the `host_b`:
 
 ```bash
 ros2 run demo_nodes_cpp listener
@@ -154,41 +143,39 @@ ros2 run demo_nodes_cpp listener
 
 ### Option 2: Discovery Server config
 
-1. Connect both hosts to the same Husarnet network (eg. named `host_A` and `host_B`).
+1. Connect both hosts to the same Husarnet network (eg. named `host_a` and `host_b`).
 
-2. Execute on `host_A`:
+2. Execute on `host_a`:
 
 ```bash
 docker run \
 --detach \
 --restart=unless-stopped \
 --network host \
--e DISCOVERY=SERVER \
--e DS_HOSTNAME=host_A \
+-e DISCOVERY_SERVER_PORT="11888" \
 husarnet/dds-router:v2.0.0
 ```
 
-3. Execute on `host_B`:
+3. Execute on `host_b`:
 
 ```bash
 docker run \
 --detach \
 --restart=unless-stopped \
 --network host \
--e DISCOVERY=CLIENT \
--e DS_HOSTNAME=host_A \
+-e ROS_DISCOVERY_SERVER="host_a:11888" \
 husarnet/dds-router:v2.0.0
 ```
 
 4. Start a chatter demo:
 
-- on the `host_A`:
+- on the `host_a`:
 
 ```bash
 ros2 run demo_nodes_cpp talker
 ```
 
-- on the `host_B`:
+- on the `host_b`:
 
 ```bash
 ros2 run demo_nodes_cpp listener
@@ -196,12 +183,12 @@ ros2 run demo_nodes_cpp listener
 
 ### Option 3: custom config
 
-1. Connect both hosts to the same Husarnet network (eg. named `host_A` and `host_B`).
+1. Connect both hosts to the same Husarnet network (eg. named `host_a` and `host_b`).
 
-2. Create a DDS Router config file on the `host_A`:
+2. Create a DDS Router config file on the `host_a`:
 
 ```bash
-user@host_A:~$ vim config.yaml
+user@host_a:~$ vim config.yaml
 ```
 
 with the following content:
@@ -225,15 +212,15 @@ participants:
     discovery-server-guid:
       id: 200
     listening-addresses:
-      - domain: host_A
+      - domain: host_a
         port: 11811
         transport: udp
 ```
 
-3. Create a DDS Router config file on the `host_B`:
+3. Create a DDS Router config file on the `host_b`:
 
 ```bash
-user@host_B:~$ vim config.yaml
+user@host_b:~$ vim config.yaml
 ```
 
 with the following content:
@@ -260,12 +247,12 @@ participants:
       - discovery-server-guid:
           id: 200
         addresses:
-          - domain: host_A 
+          - domain: host_a 
             port: 11811
             transport: udp
 ```
 
-4. On both `host_A` and `host_B` execute (in the same folder as `config.yaml` file):
+4. On both `host_a` and `host_b` execute (in the same folder as `config.yaml` file):
 
 ```bash
 docker run --name dds-router \
@@ -283,14 +270,14 @@ docker run --name dds-router \
 
 5. Start a chatter demo:
 
-- on the `host_A`:
+- on the `host_a`:
 
 ```bash
 export ROS_DOMAIN_ID=0
 ros2 run demo_nodes_cpp talker
 ```
 
-- on the `host_B`:
+- on the `host_b`:
 
 ```bash
 export ROS_DOMAIN_ID=0
