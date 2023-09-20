@@ -8,13 +8,17 @@ Fast DDS Router Docker image with auto-configuration for Husarnet VPN.
 | - | - | - |
 | `AUTO_CONFIG` | `TRUE` | If set to `TRUE``, the `DDS_ROUTER_CONFIGURATION.yaml`` will be automatically generated using all other environment variables. Set to `FALSE`` to use a custom DDS Router configuration, **bypassing all other environment variables** |
 | `USE_HUSARNET` | `TRUE` | When set to `TRUE`, the DDS Router configuration file populates with Husarnet peers addresses. If `FALSE`, the DDS Router operates solely within the local network, defaulting to the DDS simple discovery protocol. In this scenario, the first participant's domain id is `ROS_DOMAIN_ID`, while the second participant's domain id is consistently `0`. However, if `ROS_DOMAIN_ID=0`, the first participant's domain id defaults to `77` to prevent both participants from having a domain id of `0`. |
-| `FAIL_IF_HUSARNET_NOT_AVAILABLE` | `FALSE` | When set to `FALSE`, if the Husarnet Daemon HTTP API is unreachable, the system behaves as though USE_HUSARNET=FALSE. When set to `TRUE`, the container stops if it cannot connect to the Husarnet Daemon API. |
+| `DISCOVERY_SERVER_PORT` |  | By default is unset. Set it to a number between `0` to `65535` to activate DDS Router in the Discovery Server - Server config (ignoring the `ROS_DISCOVERY_SERVER` env value). You can set the Discovery Server ID with the `SERVER_ID` env |
+| `ROS_DISCOVERY_SERVER` | | By default is unset. Set it to one of the following formats: `<husarnet-ipv6-addr>:<discovery-server-port>` or `<husarnet-hostname>:<discovery-server-port>` to connect as the Client to the device acting as a Discovery Server. Remember to unset `DISCOVERY_SERVER_PORT`! |
+| `CLIENT_ID` | `1` | The ID of the client connecting to the Discovery Server. Every client need to has a differnet `CLIENT_ID`. |
+| `SERVER_ID` | `0` | The ID of the server (set it both for the "sever" and "client" devices) |
 | `ROS_DOMAIN_ID` | `0` | from `0` to `232`. |
+| `ROS_DOMAIN_ID_2` | `77` | from `0` to `232`. Set it only if `USE_HUSARNET=FALSE` or `FAIL_IF_HUSARNET_NOT_AVAILABLE=FALSE`. This will setup the DDS Router to work in the local network using the standard DDS discovery mechnism (multicasting). Note that the second peer need to have different `ROS_DOMAIN_ID` is using the DDS Router in the local network to prevent the unwanted messages retransmission loop in the DDS network. |
+| `EXIT_IF_HUSARNET_NOT_AVAILABLE` | `FALSE` | When set to `FALSE`, if the Husarnet Daemon HTTP API is unreachable, the system behaves as though `USE_HUSARNET=FALSE`. When set to `TRUE`, the container stops if it cannot connect to the Husarnet Daemon API. |
+| `EXIT_IF_HOST_TABLE_CHANGED` | `FALSE` | Valid only if `DISCOVERY_SERVER_PORT` and `ROS_DISCOVERY_SERVER` envs are unset and thus starting the **Initial Peers** config. This env is useful in connection with `restart: always` Docker policy - it restarts the DDS Router with a new Initial Peers list applied (the Initial Peers list is not updated by the DDS Router in runtime)  |
 | `LOCAL_TRANSPORT` | `udp` | `udp` for UDP based local DDS setup, `builtin` for a shared memory based local DDS setup (if using `builtin` with `--network host`, remember to add also `--ipc host `). |
-| `DISCOVERY` | `WAN` | `WAN` for the [WAN Participant (initial peers)](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/wan.html#user-manual-participants-wan) setup, `SERVER` or `CLIENT` for [Local Discovery Server Participant](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/local_discovery_server.html#user-manual-participants-local-discovery-server) setup. |
-| `DS_HOSTNAME` | `master` | Use the `DS_HOSTNAME` to specify the Husarnet hostname for devices set with `DISCOVERY=SERVER`. Ensure that both `SERVER` and `CLIENT` devices have the same `DS_HOSTNAME`. Ignored when `DISCOVERY=WAN`. |
-| `DS_CLIENT_ID` | `1` | The ID of the client if `DISCOVERY=CLIENT`. Each client conntected to the Discovery Server need to has a differnet `DS_CLIENT_ID`. Don't use it if `DISCOVERY=WAN`. |
-| `DS_SERVER_ID` | `0` | Specify the server's ID by setting it for both `DISCOVERY=CLIENT` and `DISCOVERY=SERVER`. Do not use this setting if DISCOVERY=WAN. |
+
+
 
 ## Example Setups
 

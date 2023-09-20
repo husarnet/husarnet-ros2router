@@ -24,4 +24,4 @@ services:
       - LOCAL_TRANSPORT=builtin
       - EXIT_IF_HUSARNET_NOT_AVAILABLE=TRUE
       - EXIT_IF_HOST_TABLE_CHANGED=TRUE
-    # entrypoint: sleep 3600
+    entrypoint: sleep 3600
