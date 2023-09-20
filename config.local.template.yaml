@@ -7,12 +7,12 @@ builtin-topics: []
 
 participants:
 
-  - name: SimpleParticipant1
+  - name: SimpleParticipantLocal
     kind: local
     domain: 0
     transport: udp
 
-  - name: SimpleParticipant2
+  - name: SimpleParticipantRemote
     kind: local
     domain: 0
     transport: udp

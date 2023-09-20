@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# check process PID with "ps aux | grep config_daemon.sh"
+# kill the process with "pkill -f config_daemon.sh"
+
 while true; do
     if [ -f config.yaml ]; then
         # config.yaml exists
@@ -20,10 +23,14 @@ while true; do
             exit 1
         fi
 
-        if [[ "$DISCOVERY" == "WAN" ]]; then
+        # check if we are in Initial Peers (WAN) config
+        if [ -z "${DISCOVERY_SERVER_PORT}" ] && [ -z "${ROS_DISCOVERY_SERVER}" ]; then
+            export restart_ddsrouter=false
             export local_ip=$(echo $husarnet_api_response | yq .result.local_ip)
 
             peers=$(echo $husarnet_api_response | yq '.result.whitelist')
+            : ${peers_previous:=$peers}
+
             peers_no=$(echo $peers | yq '. | length')
 
             yq -i 'del(.participants[1].connection-addresses[0])' config.yaml
@@ -37,6 +44,11 @@ while true; do
                     yq -i '.participants[1].connection-addresses += {"ip": env(address), "port": 11811} ' config.yaml
                 fi
             done
+
+            # check if peers table has changed
+            if [[ -n $(diff <(echo $peers | yq .) <(echo $peers_previous | yq .)) ]]; then
+                restart_ddsrouter=true
+            fi
         fi
     fi
 
@@ -51,6 +63,18 @@ while true; do
 
         # we need to trigger the FileWatcher, because mv doesn't do that
         echo "" >>DDS_ROUTER_CONFIGURATION.yaml
+    fi
+
+    if [ "$restart_ddsrouter" == "true" ]; then
+        echo "Host table changed."
+
+        if [[ $EXIT_IF_HOST_TABLE_CHANGED == "TRUE" ]]; then
+            echo "Exiting."
+            pkill ddsrouter
+            exit 1
+        else
+            echo "If you want to include new peers, restart the ddsrouter service."
+        fi
     fi
 
     # indicate that one loop is done

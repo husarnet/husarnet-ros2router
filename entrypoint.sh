@@ -5,39 +5,106 @@ create_config_husarnet() {
         export ROS_DOMAIN_ID=0
     fi
 
-    case $DISCOVERY in
-    SERVER)
-        yq '.participants[1].listening-addresses[0].domain = strenv(DS_HOSTNAME)' config.server.template.yaml >DDS_ROUTER_CONFIGURATION_base.yaml
-        yq -i '.participants[1].discovery-server-guid.id = env(DS_SERVER_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
-        ;;
-    CLIENT)
-        yq '.participants[1].connection-addresses[0].addresses[0].domain = strenv(DS_HOSTNAME)' config.client.template.yaml >DDS_ROUTER_CONFIGURATION_base.yaml
-        yq -i '.participants[1].discovery-server-guid.id = env(DS_CLIENT_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
-        yq -i '.participants[1].connection-addresses[0].discovery-server-guid.id = env(DS_SERVER_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
-        ;;
-    WAN)
-        cp config.wan.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
+    # Check if DISCOVERY_SERVER_PORT environment variable exists
+    if [ -z "${DISCOVERY_SERVER_PORT}" ]; then
+        # DISCOVERY_SERVER_PORT is not set.
 
-        export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
-        yq -i '.participants[1].listening-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION_base.yaml
-        yq -i '.participants[1].connection-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION_base.yaml
-        ;;
-    *)
-        echo "Unknown DISCOVERY type"
-        exit 1
-        ;;
-    esac
+        # Check if ROS_DISCOVERY_SERVER environment variable exists
+        if [ -z "${ROS_DISCOVERY_SERVER}" ]; then
+            echo "Launching Initial Peers config"
+
+            cp config.wan.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
+
+            export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
+            yq -i '.participants[1].listening-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION_base.yaml
+            yq -i '.participants[1].connection-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION_base.yaml
+        else
+            echo "Launching ROS Discovery Server - Client config"
+            # Regular expression to match hostname:port or [ipv6addr]:port
+            regex="^(([a-zA-Z0-9-]+):([0-9]+)|\[(([a-fA-F0-9]{1,4}:){1,7}[a-fA-F0-9]{1,4}|[a-fA-F0-9]{0,4})\]:([0-9]+))$"
+
+            if [[ "${ROS_DISCOVERY_SERVER}" =~ $regex ]]; then
+                # Extract HOST and PORT from the match results
+                if [ -z "${BASH_REMATCH[4]}" ]; then
+                    # If it's in hostname:port format
+                    HOST="${BASH_REMATCH[2]}"
+                    export PORT="${BASH_REMATCH[3]}"
+
+                    ipv6=$(echo $husarnet_api_response | yq .result.host_table | yq -r ".$HOST")
+
+                    if [[ "$ipv6" == "null" || -z "$ipv6" ]]; then
+                        echo "Error: IPv6 address not found for $HOST"
+                        exit 1
+                    else
+                        export HOST=$ipv6
+                    fi
+                else
+                    # If it's in [ipv6addr]:port format
+                    HOST="${BASH_REMATCH[4]}"
+                    export PORT="${BASH_REMATCH[6]}"
+
+                    # Extract all IP addresses from the host_table
+                    IP_ADDRESSES=$(echo $husarnet_api_response | yq '.result.host_table[]')
+
+                    # Iterate over each address in IP_ADDRESSES
+                    address_found=false
+                    IFS=$'\n' # Set Internal Field Separator to newline for the loop
+                    for address in $IP_ADDRESSES; do
+                        if [[ "$address" == "$HOST" ]]; then
+                            address_found=true
+                            break
+                        fi
+                    done
+
+                    if $address_found; then
+                        export HOST
+                    else
+                        echo "Error: $HOST address not found"
+                        exit 1
+                    fi
+                fi
+
+                if [[ ! ($PORT -le 65535) ]]; then
+                    echo "Discovery Server Port is not a valid number or is outside the valid range (0-65535)."
+                    exit 1
+                fi
+
+                yq '.participants[1].connection-addresses[0].addresses[0].ip = strenv(HOST)' config.client.template.yaml >DDS_ROUTER_CONFIGURATION_base.yaml
+                yq -i '.participants[1].connection-addresses[0].addresses[0].port = env(PORT)' DDS_ROUTER_CONFIGURATION_base.yaml
+                yq -i '.participants[1].discovery-server-guid.id = env(CLIENT_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
+                yq -i '.participants[1].connection-addresses[0].discovery-server-guid.id = env(SERVER_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
+
+                echo "ROS_DISCOVERY_SERVER is set with HOST: $HOST and PORT: $PORT."
+            else
+                echo "ROS_DISCOVERY_SERVER does not have a valid format."
+                exit 1
+            fi
+        fi
+
+    else
+        echo "Launching ROS Discovery Server - Server config"
+        # Check if the value is a number and smaller than 65535
+        if [[ "$DISCOVERY_SERVER_PORT" =~ ^[0-9]+$ && $DISCOVERY_SERVER_PORT -lt 65535 ]]; then
+            # DISCOVERY_SERVER_PORT is set and its value is smaller than 65535.
+            
+            export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
+
+            echo "On different hosts, set the ROS_DISCOVERY_SERVER=[$LOCAL_IP]:$DISCOVERY_SERVER_PORT"
+
+            yq '.participants[1].listening-addresses[0].ip = strenv(LOCAL_IP)' config.server.template.yaml >DDS_ROUTER_CONFIGURATION_base.yaml
+            yq -i '.participants[1].listening-addresses[0].port = env(DISCOVERY_SERVER_PORT)' DDS_ROUTER_CONFIGURATION_base.yaml
+            yq -i '.participants[1].discovery-server-guid.id = env(SERVER_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
+        else
+            echo "DISCOVERY_SERVER_PORT value is not a valid number or is greater than or equal to 65535."
+            # Insert other commands here if needed
+            exit 1
+        fi
+    fi
 }
 
 create_config_local() {
-    if [[ -z "${ROS_DOMAIN_ID}" || "${ROS_DOMAIN_ID}" -eq 0 ]]; then
-        export ROS_DOMAIN_ID=77
-
-        echo "In LAN setup ROS_DOMAIN_ID can't be 0"
-        echo "Starting with ROS_DOMAIN_ID=$ROS_DOMAIN_ID"
-    fi
-
     cp config.local.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
+    yq -i '.participants[1].domain = env(ROS_DOMAIN_ID_2)' DDS_ROUTER_CONFIGURATION_base.yaml
 }
 
 if [[ $AUTO_CONFIG == "TRUE" ]]; then
@@ -56,7 +123,7 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
                 if [ "$(echo $husarnet_api_response | yq -r .result.is_ready)" != "true" ]; then
                     if [[ $i -eq 7 ]]; then
                         echo "Husarnet API is not ready."
-                        if [[ $FAIL_IF_HUSARNET_NOT_AVAILABLE == "TRUE" ]]; then
+                        if [[ $EXIT_IF_HUSARNET_NOT_AVAILABLE == "TRUE" ]]; then
                             echo "Exiting."
                             exit 1
                         else
@@ -78,7 +145,7 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
             else
                 if [[ $i -eq 5 ]]; then
                     echo "Can't reach Husarnet Daemon HTTP API after 5 retries"
-                    if [[ $FAIL_IF_HUSARNET_NOT_AVAILABLE == "TRUE" ]]; then
+                    if [[ $EXIT_IF_HUSARNET_NOT_AVAILABLE == "TRUE" ]]; then
                         echo "Exiting."
                         exit 1
                     else
@@ -102,7 +169,13 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
     rm -f config.yaml.tmp
     rm -f /tmp/loop_done_semaphore
 
-    nohup ./config_daemon.sh &>config_daemon_logs.txt &
+    # Start a config_daemon
+    rm -f config_daemon_logs_pipe
+    mkfifo config_daemon_logs_pipe
+    cat <config_daemon_logs_pipe &
+    pkill -f config_daemon.sh
+    nohup ./config_daemon.sh >config_daemon_logs_pipe 2>&1 &
+    # nohup ./config_daemon.sh &>config_daemon_logs.txt &
 
     # wait for the semaphore indicating the loop has completed once
     while [ ! -f /tmp/loop_done_semaphore ]; do

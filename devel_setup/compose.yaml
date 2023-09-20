@@ -6,16 +6,22 @@
 
 services:
   dds_router:
-    image: husarnet/dds-router:topic-filtering
+    image: husarnet/dds-router:refactor-envs
+    restart: always
     network_mode: host
     ipc: host
     volumes:
-      - ../entrypoint.sh:/entrypoint.sh
+      - ../config.client.template.yaml:/config.client.template.yaml
+      - ../config.server.template.yaml:/config.server.template.yaml
+      - ../config.wan.template.yaml:/config.wan.template.yaml
+      - ../config.local.template.yaml:/config.local.template.yaml
       - ../config_daemon.sh:/config_daemon.sh
+      - ../entrypoint.sh:/entrypoint.sh
       - ./filter.yaml:/filter.yaml
     environment:
-      - ROS_DOMAIN_ID=0
-      - DISCOVERY=SERVER
-      - DS_HOSTNAME=master
+      - ROS_DOMAIN_ID=123
+      # - DISCOVERY_SERVER_PORT=1234
       - LOCAL_TRANSPORT=builtin
+      - EXIT_IF_HUSARNET_NOT_AVAILABLE=TRUE
+      - EXIT_IF_HOST_TABLE_CHANGED=TRUE
     entrypoint: sleep 3600
