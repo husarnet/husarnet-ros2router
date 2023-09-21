@@ -2,7 +2,7 @@
 
 [![Build a Docker Image](https://github.com/husarnet/dds-router/actions/workflows/build_push.yaml/badge.svg)](https://github.com/husarnet/dds-router/actions/workflows/build_push.yaml)
 
-The `husarnet/dds-router` Docker image powered is designed to effortlessly bridge local ROS 2 nodes, even those with standard DDS settings, to nodes on different machines across various networks. It runs seamlessly with the Husarnet VPN, ensuring that neither distance nor network differences become obstacles in your ROS 2 projects. 
+The `husarnet/dds-router` Docker image is designed to effortlessly bridge local ROS 2 nodes, even those with standard DDS settings, to nodes on different machines across various networks. It runs seamlessly with the Husarnet VPN, ensuring that neither distance nor network differences become obstacles in your ROS 2 projects. 
 
 Compatible with both natively-executed ROS 2 nodes and those operating within Docker.
 
