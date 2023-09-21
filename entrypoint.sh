@@ -86,7 +86,7 @@ create_config_husarnet() {
         # Check if the value is a number and smaller than 65535
         if [[ "$DISCOVERY_SERVER_PORT" =~ ^[0-9]+$ && $DISCOVERY_SERVER_PORT -lt 65535 ]]; then
             # DISCOVERY_SERVER_PORT is set and its value is smaller than 65535.
-            
+
             export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
 
             echo "On different hosts, set the ROS_DISCOVERY_SERVER=[$LOCAL_IP]:$DISCOVERY_SERVER_PORT"
@@ -161,6 +161,29 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
             fi
         done
 
+    fi
+
+    if [[ -n $WHITELIST_INTERFACES ]]; then
+        # Convert delimiters to whitespace for word splitting
+        IP_LIST=$(echo "$WHITELIST_INTERFACES" | tr ',; ' ' ')
+
+        # IP address validation regex pattern
+        IP_REGEX="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+
+        yq -i '.participants[0].whitelist-interfaces = []' DDS_ROUTER_CONFIGURATION_base.yaml
+        # Loop over the IP addresses
+        for ip in $IP_LIST; do
+            if [[ $ip =~ $IP_REGEX ]]; then
+                export ip
+                yq -i '.participants[0].whitelist-interfaces += env(ip)' DDS_ROUTER_CONFIGURATION_base.yaml
+            else
+                echo "WHITELIST_INTERFACES: $ip is NOT a valid IP address"
+            fi
+        done
+
+        if [[ $(yq '.participants[0].whitelist-interfaces' DDS_ROUTER_CONFIGURATION_base.yaml) == "[]" ]]; then
+            yq -i 'del(.participants[0].whitelist-interfaces)' DDS_ROUTER_CONFIGURATION_base.yaml
+        fi
     fi
 
     yq -i '.participants[0].domain = env(ROS_DOMAIN_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
