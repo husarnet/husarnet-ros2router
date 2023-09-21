@@ -17,6 +17,7 @@ Fast DDS Router Docker image with auto-configuration for Husarnet VPN.
 | `EXIT_IF_HUSARNET_NOT_AVAILABLE` | `FALSE` | When set to `FALSE`, if the Husarnet Daemon HTTP API is unreachable, the system behaves as though `USE_HUSARNET=FALSE`. When set to `TRUE`, the container stops if it cannot connect to the Husarnet Daemon API. |
 | `EXIT_IF_HOST_TABLE_CHANGED` | `FALSE` | Valid only if `DISCOVERY_SERVER_PORT` and `ROS_DISCOVERY_SERVER` envs are unset and thus starting the **Initial Peers** config. This env is useful in connection with `restart: always` Docker policy - it restarts the DDS Router with a new Initial Peers list applied (the Initial Peers list is not updated by the DDS Router in runtime)  |
 | `LOCAL_TRANSPORT` | `udp` | `udp` for UDP based local DDS setup, `builtin` for a shared memory based local DDS setup (if using `builtin` with `--network host`, remember to add also `--ipc host `). |
+| `WHITELIST_INTERFACES` |  | Initially unset. This environment variable holds a list of IP addresses separated by commas, spaces, or semicolons. These IP addresses correspond to local network interfaces utilized by the local participant (that doesn't use Husarnet). This configuration is beneficial when there's a need to direct discovery traffic from a local participant solely to ROS 2 nodes that operate either on the host machine or only within a specified Docker network. Example value `127.0.0.1 172.22.0.1 172.19.0.1` etc.|
 
 ## Example Setups
 
