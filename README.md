@@ -28,9 +28,9 @@ Based on [DDS Router](https://github.com/eProsima/DDS-Router) project by eProsim
 
 2. **Husarnet Account Setup**
 
-   - Register for a free account on [app.husarnet.com](https://app.husarnet.com/).
-   - Establish a new Husarnet network in the Online Dashboard.
-   - Click the **[Add element]** button and copy the code under the **Join Code** tab.
+- Register for a free account on [app.husarnet.com](https://app.husarnet.com/).
+- Establish a new Husarnet network in the Online Dashboard.
+- Click the **[Add element]** button and copy the code under the **Join Code** tab.
 
 3. **Connect Devices to Husarnet:**
 
