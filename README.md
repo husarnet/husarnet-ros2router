@@ -62,7 +62,7 @@ Based on [DDS Router](https://github.com/eProsima/DDS-Router) project by eProsim
 
 5. **Verify Connection:**
 
-   Open the terminal for the `listener``. You should start seeing incoming messages.
+   Open the terminal for the `listener`. You should start seeing incoming messages.
 
 This guide provides a straightforward setup. Dive deeper and explore additional options and examples in the sections below.
 
