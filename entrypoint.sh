@@ -2,7 +2,7 @@
 
 strip_quotes() {
     local value="$1"
-    
+
     # Remove double quotes from the beginning and end
     value="${value%\"}"
     value="${value#\"}"
@@ -19,7 +19,7 @@ create_config_husarnet() {
         export ROS_DOMAIN_ID=0
     fi
 
-    if [[ -z "$DS_LISTENING_PORT" && -z "$ROS_DISCOVERY_SERVER" ]]; then
+    if [[ -z "$LISTENING_PORT" && -z "$ROS_DISCOVERY_SERVER" ]]; then
         echo "Launching Initial Peers config"
 
         cp config.wan.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
@@ -32,12 +32,9 @@ create_config_husarnet() {
 
         cp config.discovery-server.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
 
-        # Set the local Discovery Server ID to the first element of the DS_ID variable
-        IFS=' ,;' read -ra DS_ID_LIST <<<"$DS_ID"
-        export SERVER_ID=${DS_ID_LIST[0]}
-
-        echo "Local Server ID: $SERVER_ID"
-        yq -i '.participants[1].discovery-server-guid.id = env(SERVER_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
+        # Set the local Discovery Server ID to the first element of the ID variable
+        echo "Local Server ID: $ID"
+        yq -i '.participants[1].discovery-server-guid.id = env(ID)' DDS_ROUTER_CONFIGURATION_base.yaml
 
         #  ==============================================
         # Checking if listening for incomming connections
@@ -45,25 +42,25 @@ create_config_husarnet() {
 
         yq -i '.participants[1].listening-addresses = []' DDS_ROUTER_CONFIGURATION_base.yaml
 
-        if [[ -n "$DS_LISTENING_PORT" ]]; then
+        if [[ -n "$LISTENING_PORT" ]]; then
             echo "> Server config"
             # Check if the value is a number and smaller than 65535
-            if [[ "$DS_LISTENING_PORT" =~ ^[0-9]+$ && $DS_LISTENING_PORT -lt 65535 ]]; then
+            if [[ "$LISTENING_PORT" =~ ^[0-9]+$ && $LISTENING_PORT -lt 65535 ]]; then
                 # DISCOVERY_SERVER_PORT is set and its value is smaller than 65535.
 
                 export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
 
-                echo "On different hosts, set the ROS_DISCOVERY_SERVER=[$LOCAL_IP]:$DS_LISTENING_PORT"
+                echo "On different hosts, set the ROS_DISCOVERY_SERVER=[$LOCAL_IP]:$LISTENING_PORT"
 
                 yq -i '.participants[1].listening-addresses += 
                         { 
                             "ip": env(LOCAL_IP),
-                            "port": env(DS_LISTENING_PORT),
+                            "port": env(LISTENING_PORT),
                             "transport": "udp"
                         }' DDS_ROUTER_CONFIGURATION_base.yaml
 
             else
-                echo "Error: DS_LISTENING_PORT value is not a valid number or is greater than or equal to 65535."
+                echo "Error: LISTENING_PORT value is not a valid number or is greater than or equal to 65535."
                 # Insert other commands here if needed
                 exit 1
             fi
@@ -80,16 +77,40 @@ create_config_husarnet() {
         if [[ -n "$ROS_DISCOVERY_SERVER" ]]; then
             echo "> Client config"
 
-            # Splitting the string into an array using space, comma, or semicolon as the delimiter
-            IFS=' ,;' read -ra DS_LIST <<<"$ROS_DISCOVERY_SERVER"
+            # Splitting the string into an array using semicolon as the delimiter
+            IFS=';' read -ra DS_LIST <<<"$ROS_DISCOVERY_SERVER"
+
+            # Process the array
+            NEW_LIST=()
+            for entry in "${DS_LIST[@]}"; do
+                # If the entry is empty, replace it with "_EMPTY_"
+                if [ -z "$entry" ]; then
+                    NEW_LIST+=("_EMPTY_")
+                else
+                    NEW_LIST+=("$entry")
+                fi
+            done
+
+            # Join back into a string
+            IFS=";"
+            NEW_STR="${NEW_LIST[*]}"
+
+            # Splitting the modified string into an array for final result
+            IFS=';' read -ra DS_LIST <<<"$NEW_STR"
 
             # Regular expression to match hostname:port or [ipv6addr]:port
             DS_REGEX="^(([a-zA-Z0-9-]+):([0-9]+)|\[(([a-fA-F0-9]{1,4}:){1,7}[a-fA-F0-9]{1,4}|[a-fA-F0-9]{0,4})\]:([0-9]+))$"
 
             echo "Connecting to:"
             # Loop over Discovery Servers
-            iterator=1
+            current_id=0
             for ds in ${DS_LIST[@]}; do
+                # If the current element is _EMPTY_, skip further processing in this iteration
+                if [ "$ds" = "_EMPTY_" ]; then
+                    ((current_id++))
+                    continue
+                fi
+
                 if [[ "${ds}" =~ $DS_REGEX ]]; then
                     # Extract HOST and PORT from the match results
                     if [ -z "${BASH_REMATCH[4]}" ]; then
@@ -136,13 +157,8 @@ create_config_husarnet() {
                         exit 1
                     fi
 
-                    if [[ -z "${DS_ID_LIST[$iterator]}" ]]; then
-                        echo "Error: DS_ID contains to few elements"
-                        exit 1
-                    else
-                        export SERVER_ID=${DS_ID_LIST[$iterator]}
-                    fi
-                    ((iterator++))
+                    export SERVER_ID=${current_id}
+                    ((current_id++))
 
                     yq -i '.participants[1].connection-addresses += 
                             { 
@@ -180,8 +196,7 @@ create_config_local() {
 }
 
 ROS_DISCOVERY_SERVER=$(strip_quotes "$ROS_DISCOVERY_SERVER")
-DS_LISTENING_PORT=$(strip_quotes "$DS_LISTENING_PORT")
-DS_ID=$(strip_quotes "$DS_ID")
+LISTENING_PORT=$(strip_quotes "$LISTENING_PORT")
 
 if [[ $AUTO_CONFIG == "TRUE" ]]; then
 

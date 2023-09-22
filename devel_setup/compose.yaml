@@ -6,7 +6,7 @@
 
 services:
   dds_router:
-    image: husarnet/dds-router:local-participant-whitelist
+    image: husarnet/dds-router:v2.0.0
     restart: always
     network_mode: host
     ipc: host
