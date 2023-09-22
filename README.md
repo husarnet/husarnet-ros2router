@@ -72,10 +72,9 @@ This guide provides a straightforward setup. Dive deeper and explore additional 
 | - | - | - |
 | `AUTO_CONFIG` | `TRUE` | If set to `TRUE``, the `DDS_ROUTER_CONFIGURATION.yaml`` will be automatically generated using all other environment variables. Set to `FALSE`` to use a custom DDS Router configuration, **bypassing all other environment variables** |
 | `USE_HUSARNET` | `TRUE` | When set to `TRUE`, the DDS Router configuration file populates with Husarnet peers addresses. If `FALSE`, the DDS Router operates solely within the local network, defaulting to the DDS simple discovery protocol. In this scenario, the first participant's domain id is `ROS_DOMAIN_ID`, while the second participant's domain id is consistently `0`. However, if `ROS_DOMAIN_ID=0`, the first participant's domain id defaults to `77` to prevent both participants from having a domain id of `0`. |
-| `DISCOVERY_SERVER_PORT` |  | By default is unset. Set it to a number between `0` to `65535` to activate DDS Router in the Discovery Server - Server config (ignoring the `ROS_DISCOVERY_SERVER` env value). You can set the Discovery Server ID with the `SERVER_ID` env |
+| `DS_LISTENING_PORT` |  | By default is unset. Set it to a number between `0` to `65535` to activate DDS Router in the Discovery Server - Server config (ignoring the `ROS_DISCOVERY_SERVER` env value). You can set the Discovery Server ID with the `SERVER_ID` env |
 | `ROS_DISCOVERY_SERVER` | | By default is unset. Set it to one of the following formats: `<husarnet-ipv6-addr>:<discovery-server-port>` or `<husarnet-hostname>:<discovery-server-port>` to connect as the Client to the device acting as a Discovery Server. Remember to unset `DISCOVERY_SERVER_PORT`! |
-| `CLIENT_ID` | `1` | The ID of the client connecting to the Discovery Server. Every client need to has a differnet `CLIENT_ID`. |
-| `SERVER_ID` | `0` | The ID of the server (set it both for the "sever" and "client" devices) |
+| `DS_ID` | `1 0` | The ID of the local Discovery Server, followed by the IDs of the target remote Discovery Servers we aim to connect with as clients. For a "server only" setup you need only own ID (eg. `DS_ID=0`). A list of IDs is separated by commas, spaces, or semicolons |
 | `ROS_DOMAIN_ID` | `0` | from `0` to `232`. |
 | `ROS_DOMAIN_ID_2` | `77` | from `0` to `232`. Set it only if `USE_HUSARNET=FALSE` or `FAIL_IF_HUSARNET_NOT_AVAILABLE=FALSE`. This will setup the DDS Router to work in the local network using the standard DDS discovery mechnism (multicasting). Note that the second peer need to have different `ROS_DOMAIN_ID` is using the DDS Router in the local network to prevent the unwanted messages retransmission loop in the DDS network. |
 | `EXIT_IF_HUSARNET_NOT_AVAILABLE` | `FALSE` | When set to `FALSE`, if the Husarnet Daemon HTTP API is unreachable, the system behaves as though `USE_HUSARNET=FALSE`. When set to `TRUE`, the container stops if it cannot connect to the Husarnet Daemon API. |
@@ -123,7 +122,8 @@ services:
     image: husarnet/dds-router:v2.0.0
     network_mode: host
     environment:
-      - DISCOVERY_SERVER_PORT=11888
+      - DS_LISTENING_PORT=11888
+      - DS_ID=0 # 0 - id of the Discovery Server running on local machine (host_a:11888)
 ```
 
 2. `compose.yaml` for `host_b`:
@@ -135,7 +135,7 @@ services:
     network_mode: host
     environment:
       - ROS_DISCOVERY_SERVER="host_a:11888"
-      - DS_CLIENT_ID=1
+      - DS_ID="1 0" # 1 - own ID, 0 - id of the remote Discovery Server (host_a:11888)
 ```
 
 3. `compose.yaml` for `host_c`:
@@ -147,7 +147,7 @@ services:
     network_mode: host
     environment:
       - ROS_DISCOVERY_SERVER="host_a:11888"
-      - DS_CLIENT_ID=2
+      - DS_ID="2 0" # 2 - own ID, 0 - id of the remote Discovery Server (host_a:11888)
 ```
 
 ### Setup 3
