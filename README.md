@@ -1,6 +1,70 @@
 # dds-router
 
-Fast DDS Router Docker image with auto-configuration for Husarnet VPN.
+[![Build a Docker Image](https://github.com/husarnet/dds-router/actions/workflows/build_push.yaml/badge.svg)](https://github.com/husarnet/dds-router/actions/workflows/build_push.yaml)
+
+The `husarnet/dds-router` Docker image is designed to effortlessly bridge local ROS 2 nodes, even those with standard DDS settings, to nodes on different machines across various networks. It runs seamlessly with the Husarnet VPN, ensuring that neither distance nor network differences become obstacles in your ROS 2 projects. 
+
+Compatible with both natively-executed ROS 2 nodes and those operating within Docker.
+
+Based on [DDS Router](https://github.com/eProsima/DDS-Router) project by eProsima.
+
+## How it works?
+
+1. **Run ROS 2 Nodes on Two Machines:**
+
+   Whether they're in the same LAN or different ones, execute the following on your first machine:
+
+   ```bash
+   ROS_LOCALHOST_ONLY=1
+   ros2 run demo_nodes_cpp listener 
+   ```
+   
+   And on your second machine:
+
+   ```bash
+   ROS_LOCALHOST_ONLY=1
+   ros2 run demo_nodes_cpp talker
+   ```
+
+2. **Husarnet Account Setup**
+
+- Register for a free account on [app.husarnet.com](https://app.husarnet.com/).
+- Establish a new Husarnet network in the Online Dashboard.
+- Click the **[Add element]** button and copy the code under the **Join Code** tab.
+
+3. **Connect Devices to Husarnet:**
+
+   If you're on Ubuntu, follow these steps:
+ 
+   - Install Husarnet:
+
+   ```bash
+   curl https://install.husarnet.com/install.sh | sudo bash
+   ```
+
+   - Connect to the Husarnet network:
+
+   ```bash
+   sudo husarnet join <paste-join-code-here>
+   ```
+
+4. **Start the DDS Router Docker Image:**
+
+   Launch the following command on each host:
+
+   ```bash
+   docker run \
+   --detach \
+   --restart=unless-stopped \
+   --network host \
+   husarnet/dds-router:v2.0.0
+   ```
+
+5. **Verify Connection:**
+
+   Open the terminal for the `listener`. You should start seeing incoming messages.
+
+This guide provides a straightforward setup. Dive deeper and explore additional options and examples in the sections below.
 
 ## Environment Variables
 
@@ -17,6 +81,7 @@ Fast DDS Router Docker image with auto-configuration for Husarnet VPN.
 | `EXIT_IF_HUSARNET_NOT_AVAILABLE` | `FALSE` | When set to `FALSE`, if the Husarnet Daemon HTTP API is unreachable, the system behaves as though `USE_HUSARNET=FALSE`. When set to `TRUE`, the container stops if it cannot connect to the Husarnet Daemon API. |
 | `EXIT_IF_HOST_TABLE_CHANGED` | `FALSE` | Valid only if `DISCOVERY_SERVER_PORT` and `ROS_DISCOVERY_SERVER` envs are unset and thus starting the **Initial Peers** config. This env is useful in connection with `restart: always` Docker policy - it restarts the DDS Router with a new Initial Peers list applied (the Initial Peers list is not updated by the DDS Router in runtime)  |
 | `LOCAL_TRANSPORT` | `udp` | `udp` for UDP based local DDS setup, `builtin` for a shared memory based local DDS setup (if using `builtin` with `--network host`, remember to add also `--ipc host `). |
+| `WHITELIST_INTERFACES` |  | Initially unset. This environment variable holds a list of IP addresses separated by commas, spaces, or semicolons. These IP addresses correspond to local network interfaces utilized by the local participant (that doesn't use Husarnet). This configuration is beneficial when there's a need to direct discovery traffic from a local participant solely to ROS 2 nodes that operate either on the host machine or only within a specified Docker network. Example value `127.0.0.1 172.22.0.1 172.19.0.1` etc.|
 
 ## Example Setups
 

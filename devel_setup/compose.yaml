@@ -6,7 +6,7 @@
 
 services:
   dds_router:
-    image: husarnet/dds-router:refactor-envs
+    image: husarnet/dds-router:local-participant-whitelist
     restart: always
     network_mode: host
     ipc: host
@@ -20,8 +20,9 @@ services:
       - ./filter.yaml:/filter.yaml
     environment:
       - ROS_DOMAIN_ID=123
+      - ROS_DISCOVERY_SERVER="rosbot2r:123 [fc94:5fa1:c323:30bc:a87d:7485:23c4:f5a2]:9876"
       # - DISCOVERY_SERVER_PORT=1234
-      - LOCAL_TRANSPORT=builtin
-      - EXIT_IF_HUSARNET_NOT_AVAILABLE=TRUE
-      - EXIT_IF_HOST_TABLE_CHANGED=TRUE
+      # - LOCAL_TRANSPORT=builtin
+      # - EXIT_IF_HUSARNET_NOT_AVAILABLE=TRUE
+      # - EXIT_IF_HOST_TABLE_CHANGED=TRUE
     entrypoint: sleep 3600
