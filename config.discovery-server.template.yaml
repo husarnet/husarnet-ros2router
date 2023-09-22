@@ -12,15 +12,19 @@ participants:
     domain: 0
     transport: udp
 
-  - name: ClientDSParticipant
+  - name: DiscoveryServerParticipant
     kind: local-discovery-server
     discovery-server-guid:
       ros-discovery-server: true
-      id: 1
+      id: 0
+    listening-addresses:
+      - ip: 127.0.0.1
+        port: 11811
+        transport: udp
     connection-addresses:
       - discovery-server-guid:
           ros-discovery-server: true
-          id: 0
+          id: 1
         addresses:
           - ip: 127.0.0.1
             port: 11811

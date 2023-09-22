@@ -1,39 +1,94 @@
 #!/bin/bash
 
+strip_quotes() {
+    local value="$1"
+    
+    # Remove double quotes from the beginning and end
+    value="${value%\"}"
+    value="${value#\"}"
+
+    # Remove single quotes from the beginning and end
+    value="${value%\'}"
+    value="${value#\'}"
+
+    echo "$value"
+}
+
 create_config_husarnet() {
     if [ -z "${ROS_DOMAIN_ID}" ]; then
         export ROS_DOMAIN_ID=0
     fi
 
-    # Check if DISCOVERY_SERVER_PORT environment variable exists
-    if [ -z "${DISCOVERY_SERVER_PORT}" ]; then
-        # DISCOVERY_SERVER_PORT is not set.
+    if [[ -z "$DS_LISTENING_PORT" && -z "$ROS_DISCOVERY_SERVER" ]]; then
+        echo "Launching Initial Peers config"
 
-        # Check if ROS_DISCOVERY_SERVER environment variable exists
-        if [ -z "${ROS_DISCOVERY_SERVER}" ]; then
-            echo "Launching Initial Peers config"
+        cp config.wan.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
 
-            cp config.wan.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
+        export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
+        yq -i '.participants[1].listening-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants[1].connection-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION_base.yaml
+    else
+        echo "Launching ROS Discovery Server config"
 
-            export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
-            yq -i '.participants[1].listening-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION_base.yaml
-            yq -i '.participants[1].connection-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION_base.yaml
+        cp config.discovery-server.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
+
+        # Set the local Discovery Server ID to the first element of the DS_ID variable
+        IFS=' ,;' read -ra DS_ID_LIST <<<"$DS_ID"
+        export SERVER_ID=${DS_ID_LIST[0]}
+
+        echo "Local Server ID: $SERVER_ID"
+        yq -i '.participants[1].discovery-server-guid.id = env(SERVER_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
+
+        #  ==============================================
+        # Checking if listening for incomming connections
+        #  ===============================================
+
+        yq -i '.participants[1].listening-addresses = []' DDS_ROUTER_CONFIGURATION_base.yaml
+
+        if [[ -n "$DS_LISTENING_PORT" ]]; then
+            echo "> Server config"
+            # Check if the value is a number and smaller than 65535
+            if [[ "$DS_LISTENING_PORT" =~ ^[0-9]+$ && $DS_LISTENING_PORT -lt 65535 ]]; then
+                # DISCOVERY_SERVER_PORT is set and its value is smaller than 65535.
+
+                export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
+
+                echo "On different hosts, set the ROS_DISCOVERY_SERVER=[$LOCAL_IP]:$DS_LISTENING_PORT"
+
+                yq -i '.participants[1].listening-addresses += 
+                        { 
+                            "ip": env(LOCAL_IP),
+                            "port": env(DS_LISTENING_PORT),
+                            "transport": "udp"
+                        }' DDS_ROUTER_CONFIGURATION_base.yaml
+
+            else
+                echo "Error: DS_LISTENING_PORT value is not a valid number or is greater than or equal to 65535."
+                # Insert other commands here if needed
+                exit 1
+            fi
         else
-            echo "Launching ROS Discovery Server - Client config"
+            yq -i 'del(.participants[1].listening-addresses)' DDS_ROUTER_CONFIGURATION_base.yaml
+        fi
+
+        #  ==============================================
+        # Checking if connecting to other Discovery Servers
+        #  ===============================================
+
+        yq -i '.participants[1].connection-addresses = []' DDS_ROUTER_CONFIGURATION_base.yaml
+
+        if [[ -n "$ROS_DISCOVERY_SERVER" ]]; then
+            echo "> Client config"
 
             # Splitting the string into an array using space, comma, or semicolon as the delimiter
-            IFS=' ,;' read -ra DS_LIST <<< "$ROS_DISCOVERY_SERVER"
-            
+            IFS=' ,;' read -ra DS_LIST <<<"$ROS_DISCOVERY_SERVER"
+
             # Regular expression to match hostname:port or [ipv6addr]:port
             DS_REGEX="^(([a-zA-Z0-9-]+):([0-9]+)|\[(([a-fA-F0-9]{1,4}:){1,7}[a-fA-F0-9]{1,4}|[a-fA-F0-9]{0,4})\]:([0-9]+))$"
 
-            cp config.client.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
-
-            yq -i '.participants[1].discovery-server-guid.id = env(CLIENT_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
-            yq -i '.participants[1].connection-addresses = []' DDS_ROUTER_CONFIGURATION_base.yaml
-
             echo "Connecting to:"
             # Loop over Discovery Servers
+            iterator=1
             for ds in ${DS_LIST[@]}; do
                 if [[ "${ds}" =~ $DS_REGEX ]]; then
                     # Extract HOST and PORT from the match results
@@ -81,6 +136,14 @@ create_config_husarnet() {
                         exit 1
                     fi
 
+                    if [[ -z "${DS_ID_LIST[$iterator]}" ]]; then
+                        echo "Error: DS_ID contains to few elements"
+                        exit 1
+                    else
+                        export SERVER_ID=${DS_ID_LIST[$iterator]}
+                    fi
+                    ((iterator++))
+
                     yq -i '.participants[1].connection-addresses += 
                             { 
                                 "discovery-server-guid": 
@@ -98,32 +161,16 @@ create_config_husarnet() {
                                 ] 
                             }' DDS_ROUTER_CONFIGURATION_base.yaml
 
-                    echo "[$HOST]:$PORT (server id: $SERVER_ID)"
+                    echo "[$HOST]:$PORT (Server ID: $SERVER_ID)"
                 else
-                    echo "ROS_DISCOVERY_SERVER does not have a valid format: $ds"
+                    echo "Error: ROS_DISCOVERY_SERVER does not have a valid format: $ds"
                     exit 1
                 fi
             done
-        fi
-
-    else
-        echo "Launching ROS Discovery Server - Server config"
-        # Check if the value is a number and smaller than 65535
-        if [[ "$DISCOVERY_SERVER_PORT" =~ ^[0-9]+$ && $DISCOVERY_SERVER_PORT -lt 65535 ]]; then
-            # DISCOVERY_SERVER_PORT is set and its value is smaller than 65535.
-
-            export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
-
-            echo "On different hosts, set the ROS_DISCOVERY_SERVER=[$LOCAL_IP]:$DISCOVERY_SERVER_PORT"
-
-            yq '.participants[1].listening-addresses[0].ip = strenv(LOCAL_IP)' config.server.template.yaml >DDS_ROUTER_CONFIGURATION_base.yaml
-            yq -i '.participants[1].listening-addresses[0].port = env(DISCOVERY_SERVER_PORT)' DDS_ROUTER_CONFIGURATION_base.yaml
-            yq -i '.participants[1].discovery-server-guid.id = env(SERVER_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
         else
-            echo "DISCOVERY_SERVER_PORT value is not a valid number or is greater than or equal to 65535."
-            # Insert other commands here if needed
-            exit 1
+            yq -i 'del(.participants[1].connection-addresses)' DDS_ROUTER_CONFIGURATION_base.yaml
         fi
+
     fi
 }
 
@@ -131,6 +178,10 @@ create_config_local() {
     cp config.local.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
     yq -i '.participants[1].domain = env(ROS_DOMAIN_ID_2)' DDS_ROUTER_CONFIGURATION_base.yaml
 }
+
+ROS_DISCOVERY_SERVER=$(strip_quotes "$ROS_DISCOVERY_SERVER")
+DS_LISTENING_PORT=$(strip_quotes "$DS_LISTENING_PORT")
+DS_ID=$(strip_quotes "$DS_ID")
 
 if [[ $AUTO_CONFIG == "TRUE" ]]; then
 
@@ -149,7 +200,7 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
                     if [[ $i -eq 7 ]]; then
                         echo "Husarnet API is not ready."
                         if [[ $EXIT_IF_HUSARNET_NOT_AVAILABLE == "TRUE" ]]; then
-                            echo "Exiting."
+                            echo "Error: Exiting..."
                             exit 1
                         else
                             echo "Using LAN setup."
@@ -171,7 +222,7 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
                 if [[ $i -eq 5 ]]; then
                     echo "Can't reach Husarnet Daemon HTTP API after 5 retries"
                     if [[ $EXIT_IF_HUSARNET_NOT_AVAILABLE == "TRUE" ]]; then
-                        echo "Exiting."
+                        echo "Error: Exiting..."
                         exit 1
                     else
                         echo "Using LAN setup."
@@ -190,7 +241,7 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
 
     if [[ -n $WHITELIST_INTERFACES ]]; then
         # Splitting the string into an array using space, comma, or semicolon as the delimiter
-        IFS=' ,;' read -ra IP_LIST <<< "$WHITELIST_INTERFACES"
+        IFS=' ,;' read -ra IP_LIST <<<"$WHITELIST_INTERFACES"
 
         # IP address validation regex pattern
         IP_REGEX="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
