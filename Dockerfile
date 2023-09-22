@@ -51,8 +51,7 @@ COPY --from=ddsrouter_builder /dds_router /dds_router
 
 COPY entrypoint.sh /
 COPY config.local.template.yaml /
-COPY config.client.template.yaml /
-COPY config.server.template.yaml /
+COPY config.discovery-server.template.yaml /
 COPY config.wan.template.yaml /
 COPY filter.yaml /
 COPY config_daemon.sh /
