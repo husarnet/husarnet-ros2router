@@ -122,8 +122,8 @@ services:
     image: husarnet/dds-router:v2.0.0
     network_mode: host
     environment:
-      - DS_LISTENING_PORT=11888
-      - DS_ID=0 # 0 - id of the Discovery Server running on local machine (host_a:11888)
+      - LISTENING_PORT=11888
+      - ID=2 # 0 - id of the Discovery Server running on local machine (host_a:11888)
 ```
 
 2. `compose.yaml` for `host_b`:
@@ -134,8 +134,8 @@ services:
     image: husarnet/dds-router:v2.0.0
     network_mode: host
     environment:
-      - ROS_DISCOVERY_SERVER="host_a:11888"
-      - DS_ID="1 0" # 1 - own ID, 0 - id of the remote Discovery Server (host_a:11888)
+      - ROS_DISCOVERY_SERVER=";;host_a:11888" # 2x;; becasuse ID of host_a DS is 2
+      - ID=5
 ```
 
 3. `compose.yaml` for `host_c`:
@@ -146,8 +146,8 @@ services:
     image: husarnet/dds-router:v2.0.0
     network_mode: host
     environment:
-      - ROS_DISCOVERY_SERVER="host_a:11888"
-      - DS_ID="2 0" # 2 - own ID, 0 - id of the remote Discovery Server (host_a:11888)
+      - ROS_DISCOVERY_SERVER=";;host_a:11888"
+      - ID=7
 ```
 
 ### Setup 3

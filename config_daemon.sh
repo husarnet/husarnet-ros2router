@@ -24,7 +24,7 @@ while true; do
         fi
 
         # check if we are in Initial Peers (WAN) config
-        if [[ -z "$DS_LISTENING_PORT" && -z "$ROS_DISCOVERY_SERVER" ]]; then
+        if [[ -z "$LISTENING_PORT" && -z "$ROS_DISCOVERY_SERVER" ]]; then
             export restart_ddsrouter=false
             export local_ip=$(echo $husarnet_api_response | yq .result.local_ip)
 
