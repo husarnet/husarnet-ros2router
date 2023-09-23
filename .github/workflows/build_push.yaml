@@ -1,11 +1,8 @@
 name: Build a Docker Image
 
 on:
-  push:
-    paths-ignore:
-      - 'demo/**'
-      - 'README.md'
-      - '.github/**'
+  release:
+    types: [published]
   workflow_dispatch:
   
 jobs:
@@ -14,28 +11,22 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v1
-
-    - name: Parse the DDSRouter version
-      run: echo "DDSROUTER_VERSION=$(yq '.repositories.ddsrouter.version' ddsrouter.repos)" >> $GITHUB_ENV
+      uses: actions/checkout@v3
 
     - name: Set SHORT_DATE env
       run: echo "SHORT_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
       shell: bash
 
-    - name: Print the DDSRouter version
-      run: echo ${{ env.DDSROUTER_VERSION }}
-
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v1
+      uses: docker/setup-qemu-action@v2
       
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      uses: docker/setup-buildx-action@v2
       with:
         version: latest
     
     - name: Login to Docker Registry
-      uses: docker/login-action@v1
+      uses: docker/login-action@v2
       with:
         registry: docker.io
         username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -48,9 +39,8 @@ jobs:
         platforms: linux/amd64, linux/arm64
         push: true
         tags: |
-          husarnet/dds-router:${{ env.DDSROUTER_VERSION }}-${{ env.SHORT_DATE }}
-          husarnet/dds-router:${{ env.DDSROUTER_VERSION }}
-          husarnet/dds-router
+          husarnet/ros2router:-${{ env.SHORT_DATE }}
+          husarnet/ros2router
         # cache-from: type=registry,ref=husarnet/dds-router
         cache-to: type=inline
 
@@ -60,6 +50,6 @@ jobs:
       with:
         platforms: linux/amd64, linux/arm64
         push: true
-        tags: husarnet/dds-router:${{ github.head_ref || github.ref_name }}
+        tags: husarnet/ros2router:${{ github.head_ref || github.ref_name }}
         # cache-from: type=registry,ref=husarnet/dds-router-${{ github.head_ref || github.ref_name }}
         cache-to: type=inline
