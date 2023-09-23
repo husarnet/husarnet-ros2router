@@ -195,8 +195,10 @@ create_config_local() {
     yq -i '.participants[1].domain = env(ROS_DOMAIN_ID_2)' DDS_ROUTER_CONFIGURATION_base.yaml
 }
 
+WHITELIST_INTERFACES=$(strip_quotes "$WHITELIST_INTERFACES")
 ROS_DISCOVERY_SERVER=$(strip_quotes "$ROS_DISCOVERY_SERVER")
 LISTENING_PORT=$(strip_quotes "$LISTENING_PORT")
+FILTER=$(strip_quotes "$FILTER")
 
 if [[ $AUTO_CONFIG == "TRUE" ]]; then
 
@@ -289,7 +291,6 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
     cat <config_daemon_logs_pipe &
     pkill -f config_daemon.sh
     nohup ./config_daemon.sh >config_daemon_logs_pipe 2>&1 &
-    # nohup ./config_daemon.sh &>config_daemon_logs.txt &
 
     # wait for the semaphore indicating the loop has completed once
     while [ ! -f /tmp/loop_done_semaphore ]; do

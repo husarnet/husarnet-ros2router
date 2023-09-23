@@ -51,10 +51,12 @@ while true; do
             fi
         fi
     fi
-
-    yq -i '.allowlist = load("filter.yaml").allowlist' config.yaml
-    yq -i '.blocklist = load("filter.yaml").blocklist' config.yaml
-    yq -i '.builtin-topics = load("filter.yaml").builtin-topics' config.yaml
+    
+    if [[ -n "${FILTER}" ]]; then
+        yq -i '. * env(FILTER)' config.yaml
+    else
+        yq -i '. * load("filter.yaml")' config.yaml
+    fi
 
     if ! cmp -s config.yaml config.yaml.tmp; then
         # mv is an atomic operation on POSIX systems (cp is not)
