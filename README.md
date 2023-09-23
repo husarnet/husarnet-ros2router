@@ -1,12 +1,12 @@
-# dds-router
+# husarnet-ros2router
 
-[![Build a Docker Image](https://github.com/husarnet/dds-router/actions/workflows/build_push.yaml/badge.svg)](https://github.com/husarnet/dds-router/actions/workflows/build_push.yaml)
+[![Build a Docker Image](https://github.com/husarnet/husarnet-ros2router/actions/workflows/build_push.yaml/badge.svg)](https://github.com/husarnet/husarnet-ros2router/actions/workflows/build_push.yaml)
 
-The `husarnet/dds-router` Docker image is designed to effortlessly bridge local ROS 2 nodes, even those with standard DDS settings, to nodes on different machines across various networks. It runs seamlessly with the Husarnet VPN, ensuring that neither distance nor network differences become obstacles in your ROS 2 projects. 
+The `husarnet/ros2router` Docker image is designed to effortlessly bridge local ROS 2 nodes, even those with standard DDS settings, to nodes on different machines across various networks. It runs seamlessly with the Husarnet VPN, ensuring that neither distance nor network differences become obstacles in your ROS 2 projects. 
 
 Compatible with both natively-executed ROS 2 nodes and those operating within Docker.
 
-Based on [DDS Router](https://github.com/eProsima/DDS-Router) project by eProsima.
+Based on [DDS Router](https://github.com/eProsima/ros2router) project by eProsima.
 
 ## How it works?
 
@@ -57,7 +57,7 @@ Based on [DDS Router](https://github.com/eProsima/DDS-Router) project by eProsim
    --detach \
    --restart=unless-stopped \
    --network host \
-   husarnet/dds-router:v2.0.0
+   husarnet/ros2router
    ```
 
 5. **Verify Connection:**
@@ -93,7 +93,7 @@ Husarnet operates on the Host OS. ROS 2 nodes on the host use `ROS_DOMAIN_ID=1`,
 ```yaml
 services:
   ddsrouter:
-    image: husarnet/dds-router:v2.0.0
+    image: husarnet/ros2router
     restart: always
     network_mode: host
     environment:
@@ -107,7 +107,7 @@ docker run --name ddsrouter \
 --restart always \
 --network host \
 -e ROS_DOMAIN_ID=1 \
-husarnet/dds-router:v2.0.0
+husarnet/ros2router
 ```
 
 ### Setup 2
@@ -119,7 +119,7 @@ Husarnet operates on the Host OSes with hostnames `host_a` and `host_b`, and `ho
 ```yaml
 services:
   ddsrouter:
-    image: husarnet/dds-router:v2.0.0
+    image: husarnet/ros2router
     network_mode: host
     environment:
       - LISTENING_PORT=11888
@@ -131,7 +131,7 @@ services:
 ```yaml
 services:
   ddsrouter:
-    image: husarnet/dds-router:v2.0.0
+    image: husarnet/ros2router
     network_mode: host
     environment:
       - ROS_DISCOVERY_SERVER=";;host_a:11888" # 2x;; becasuse ID of host_a DS is 2
@@ -143,7 +143,7 @@ services:
 ```yaml
 services:
   ddsrouter:
-    image: husarnet/dds-router:v2.0.0
+    image: husarnet/ros2router
     network_mode: host
     environment:
       - ROS_DISCOVERY_SERVER=";;host_a:11888"
@@ -159,7 +159,7 @@ Husarnet runs on the Host OS. While ROS 2 nodes on the are in `ROS_DOMAIN_ID=0` 
 ```yaml
 services:
   ddsrouter:
-    image: husarnet/dds-router:v2.0.0
+    image: husarnet/ros2router
     network_mode: host
     volumes:
       - ./filter.yaml:/filter.yaml
@@ -189,7 +189,7 @@ docker run \
 --restart=unless-stopped \
 --network host \
 -e ROS_DOMAIN_ID \
-husarnet/dds-router:v2.0.0
+husarnet/ros2router
 ```
 
 3. Start a chatter demo:
@@ -218,7 +218,7 @@ docker run \
 --restart=unless-stopped \
 --network host \
 -e DISCOVERY_SERVER_PORT="11888" \
-husarnet/dds-router:v2.0.0
+husarnet/ros2router
 ```
 
 3. Execute on `host_b`:
@@ -229,7 +229,7 @@ docker run \
 --restart=unless-stopped \
 --network host \
 -e ROS_DISCOVERY_SERVER="host_a:11888" \
-husarnet/dds-router:v2.0.0
+husarnet/ros2router
 ```
 
 4. Start a chatter demo:
@@ -320,7 +320,7 @@ participants:
 4. On both `host_a` and `host_b` execute (in the same folder as `config.yaml` file):
 
 ```bash
-docker run --name dds-router \
+docker run --name ros2router \
   --restart=unless-stopped \
   --network host \
   --ipc host \
@@ -330,7 +330,7 @@ docker run --name dds-router \
   -v /etc/passwd:/etc/passwd:ro \
   -v /etc/shadow:/etc/shadow:ro \
   -e AUTO_CONFIG=FALSE \
-  husarnet/dds-router:v2.0.0 bash -c "ddsrouter -c /config.yaml -r 10"
+  husarnet/ros2router bash -c "ddsrouter -c /config.yaml -r 10"
 ```
 
 5. Start a chatter demo:
@@ -354,7 +354,7 @@ ros2 run demo_nodes_cpp listener
 The repo contains the `create_filter.sh` script allowing you to automate the process of creating a [DDS Router filter rules](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/configuration.html#id1):
 
 ```bash
-curl -s https://raw.githubusercontent.com/husarnet/dds-router/topic-filtering/create_filter.sh > create_filter.sh
+curl -s https://raw.githubusercontent.com/husarnet/husarnet-ros2router/topic-filtering/create_filter.sh > create_filter.sh
 chmod +x create_filter.sh
 ./create_filter.sh /chatter /cmd_vel > filter.yaml
 ```
@@ -368,5 +368,5 @@ docker run \
 --network host \
 -e ROS_DOMAIN_ID \
 -v $(pwd)/filter.yaml:/filter.yaml \
-husarnet/dds-router:v2.0.0
+husarnet/ros2router
 ```
