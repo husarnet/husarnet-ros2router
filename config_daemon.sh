@@ -3,15 +3,17 @@
 # check process PID with "ps aux | grep config_daemon.sh"
 # kill the process with "pkill -f config_daemon.sh"
 
+CFG_PATH=/var/tmp
+
 while true; do
     if [ -f config.yaml ]; then
         # config.yaml exists
-        cp config.yaml config.yaml.tmp
-        cp DDS_ROUTER_CONFIGURATION_base.yaml config.yaml
+        cp $CFG_PATH/config.yaml $CFG_PATH/config.yaml.tmp
+        cp $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml $CFG_PATH/config.yaml
     else
         # config.yaml does not exist
-        cp DDS_ROUTER_CONFIGURATION_base.yaml config.yaml
-        touch config.yaml.tmp
+        cp $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml $CFG_PATH/config.yaml
+        touch $CFG_PATH/config.yaml.tmp
     fi
 
     if [[ $husarnet_ready == true ]]; then
@@ -33,7 +35,7 @@ while true; do
 
             peers_no=$(echo $peers | yq '. | length')
 
-            yq -i 'del(.participants[1].connection-addresses[0])' config.yaml
+            yq -i 'del(.participants[1].connection-addresses[0])' $CFG_PATH/config.yaml
 
             for ((i = 0; i < $peers_no; i++)); do
                 # Extract husarnet_address for the current peer using jq
@@ -41,7 +43,7 @@ while true; do
                 export address=$(echo $peers | yq -r '.[env(i)]')
 
                 if [ "$local_ip" != "$address" ]; then
-                    yq -i '.participants[1].connection-addresses += {"ip": env(address), "port": 11811} ' config.yaml
+                    yq -i '.participants[1].connection-addresses += {"ip": env(address), "port": 11811} ' $CFG_PATH/config.yaml
                 fi
             done
 
@@ -53,18 +55,18 @@ while true; do
     fi
     
     if [[ -n "${FILTER}" ]]; then
-        yq -i '. * env(FILTER)' config.yaml
+        yq -i '. * env(FILTER)' $CFG_PATH/config.yaml
     else
-        yq -i '. * load("filter.yaml")' config.yaml
+        yq -i '. * load("filter.yaml")' $CFG_PATH/config.yaml
     fi
 
-    if ! cmp -s config.yaml config.yaml.tmp; then
+    if ! cmp -s $CFG_PATH/config.yaml $CFG_PATH/config.yaml.tmp; then
         # mv is an atomic operation on POSIX systems (cp is not)
-        cp config.yaml DDS_ROUTER_CONFIGURATION.yaml.tmp &&
-            mv DDS_ROUTER_CONFIGURATION.yaml.tmp DDS_ROUTER_CONFIGURATION.yaml
+        cp $CFG_PATH/config.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION.yaml.tmp &&
+            mv $CFG_PATH/DDS_ROUTER_CONFIGURATION.yaml.tmp $CFG_PATH/DDS_ROUTER_CONFIGURATION.yaml
 
         # we need to trigger the FileWatcher, because mv doesn't do that
-        echo "" >>DDS_ROUTER_CONFIGURATION.yaml
+        echo "" >>$CFG_PATH/DDS_ROUTER_CONFIGURATION.yaml
     fi
 
     if [ "$restart_ddsrouter" == "true" ]; then

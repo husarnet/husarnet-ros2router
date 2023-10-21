@@ -74,4 +74,5 @@ ENV WHITELIST_INTERFACES=
 ENV FILTER=
 
 ENTRYPOINT [ "/entrypoint.sh" ]
-CMD [ "ddsrouter" ]
+CMD [ "ddsrouter", "-c", "/var/tmp/DDS_ROUTER_CONFIGURATION.yaml" ]
+

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+CFG_PATH=/var/tmp
+
 strip_quotes() {
     local value="$1"
 
@@ -22,25 +24,25 @@ create_config_husarnet() {
     if [[ -z "$LISTENING_PORT" && -z "$ROS_DISCOVERY_SERVER" ]]; then
         echo "Launching Initial Peers config"
 
-        cp config.wan.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
+        cp config.wan.template.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
-        yq -i '.participants[1].listening-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION_base.yaml
-        yq -i '.participants[1].connection-addresses[0].ip = strenv(LOCAL_IP)' DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants[1].listening-addresses[0].ip = strenv(LOCAL_IP)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants[1].connection-addresses[0].ip = strenv(LOCAL_IP)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     else
         echo "Launching ROS Discovery Server config"
 
-        cp config.discovery-server.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
+        cp config.discovery-server.template.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         # Set the local Discovery Server ID to the first element of the ID variable
         echo "Local Server ID: $ID"
-        yq -i '.participants[1].discovery-server-guid.id = env(ID)' DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants[1].discovery-server-guid.id = env(ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         #  ==============================================
         # Checking if listening for incomming connections
         #  ===============================================
 
-        yq -i '.participants[1].listening-addresses = []' DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants[1].listening-addresses = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         if [[ -n "$LISTENING_PORT" ]]; then
             echo "> Server config"
@@ -57,7 +59,7 @@ create_config_husarnet() {
                             "ip": env(LOCAL_IP),
                             "port": env(LISTENING_PORT),
                             "transport": "udp"
-                        }' DDS_ROUTER_CONFIGURATION_base.yaml
+                        }' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
             else
                 echo "Error: LISTENING_PORT value is not a valid number or is greater than or equal to 65535."
@@ -65,14 +67,14 @@ create_config_husarnet() {
                 exit 1
             fi
         else
-            yq -i 'del(.participants[1].listening-addresses)' DDS_ROUTER_CONFIGURATION_base.yaml
+            yq -i 'del(.participants[1].listening-addresses)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
         fi
 
         #  ==============================================
         # Checking if connecting to other Discovery Servers
         #  ===============================================
 
-        yq -i '.participants[1].connection-addresses = []' DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants[1].connection-addresses = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         if [[ -n "$ROS_DISCOVERY_SERVER" ]]; then
             echo "> Client config"
@@ -175,7 +177,7 @@ create_config_husarnet() {
                                         "transport": "udp" 
                                     } 
                                 ] 
-                            }' DDS_ROUTER_CONFIGURATION_base.yaml
+                            }' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
                     echo "[$HOST]:$PORT (Server ID: $SERVER_ID)"
                 else
@@ -184,15 +186,15 @@ create_config_husarnet() {
                 fi
             done
         else
-            yq -i 'del(.participants[1].connection-addresses)' DDS_ROUTER_CONFIGURATION_base.yaml
+            yq -i 'del(.participants[1].connection-addresses)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
         fi
 
     fi
 }
 
 create_config_local() {
-    cp config.local.template.yaml DDS_ROUTER_CONFIGURATION_base.yaml
-    yq -i '.participants[1].domain = env(ROS_DOMAIN_ID_2)' DDS_ROUTER_CONFIGURATION_base.yaml
+    cp config.local.template.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    yq -i '.participants[1].domain = env(ROS_DOMAIN_ID_2)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 }
 
 WHITELIST_INTERFACES=$(strip_quotes "$WHITELIST_INTERFACES")
@@ -263,34 +265,35 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
         # IP address validation regex pattern
         IP_REGEX="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
-        yq -i '.participants[0].whitelist-interfaces = []' DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants[0].whitelist-interfaces = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
         # Loop over the IP addresses
         for ip in ${IP_LIST[@]}; do
             if [[ "${ip}" =~ $IP_REGEX ]]; then
                 export ip
-                yq -i '.participants[0].whitelist-interfaces += env(ip)' DDS_ROUTER_CONFIGURATION_base.yaml
+                yq -i '.participants[0].whitelist-interfaces += env(ip)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
             else
                 echo "WHITELIST_INTERFACES: $ip is NOT a valid IP address"
             fi
         done
 
-        if [[ $(yq '.participants[0].whitelist-interfaces' DDS_ROUTER_CONFIGURATION_base.yaml) == "[]" ]]; then
-            yq -i 'del(.participants[0].whitelist-interfaces)' DDS_ROUTER_CONFIGURATION_base.yaml
+        if [[ $(yq '.participants[0].whitelist-interfaces' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml) == "[]" ]]; then
+            yq -i 'del(.participants[0].whitelist-interfaces)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
         fi
     fi
 
-    yq -i '.participants[0].domain = env(ROS_DOMAIN_ID)' DDS_ROUTER_CONFIGURATION_base.yaml
-    yq -i '.participants[0].transport = env(LOCAL_TRANSPORT)' DDS_ROUTER_CONFIGURATION_base.yaml
+    yq -i '.participants[0].domain = env(ROS_DOMAIN_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    yq -i '.participants[0].transport = env(LOCAL_TRANSPORT)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
-    rm -f config.yaml.tmp
+
+    rm -f $CFG_PATH/config.yaml.tmp
     rm -f /tmp/loop_done_semaphore
 
     # Start a config_daemon
-    rm -f config_daemon_logs_pipe
-    mkfifo config_daemon_logs_pipe
-    cat <config_daemon_logs_pipe &
-    pkill -f config_daemon.sh
-    nohup ./config_daemon.sh >config_daemon_logs_pipe 2>&1 &
+    rm -f $CFG_PATH/config_daemon_logs_pipe
+    mkfifo $CFG_PATH/config_daemon_logs_pipe
+    cat <$CFG_PATH/config_daemon_logs_pipe &
+    # pkill -f config_daemon.sh
+    nohup ./config_daemon.sh >$CFG_PATH/config_daemon_logs_pipe 2>&1 &
 
     # wait for the semaphore indicating the loop has completed once
     while [ ! -f /tmp/loop_done_semaphore ]; do
