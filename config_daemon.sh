@@ -6,7 +6,7 @@
 CFG_PATH=/var/tmp
 
 while true; do
-    if [ -f config.yaml ]; then
+    if [ -f $CFG_PATH/config.yaml ]; then
         # config.yaml exists
         cp $CFG_PATH/config.yaml $CFG_PATH/config.yaml.tmp
         cp $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml $CFG_PATH/config.yaml
