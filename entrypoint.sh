@@ -292,7 +292,7 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
     rm -f $CFG_PATH/config_daemon_logs_pipe
     mkfifo $CFG_PATH/config_daemon_logs_pipe
     cat <$CFG_PATH/config_daemon_logs_pipe &
-    # pkill -f config_daemon.sh
+    pkill -f config_daemon.sh
     nohup ./config_daemon.sh >$CFG_PATH/config_daemon_logs_pipe 2>&1 &
 
     # wait for the semaphore indicating the loop has completed once
