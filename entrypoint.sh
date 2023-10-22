@@ -279,6 +279,12 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
         if [[ $(yq '.participants[0].whitelist-interfaces' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml) == "[]" ]]; then
             yq -i 'del(.participants[0].whitelist-interfaces)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
         fi
+    else
+        if [[ $ROS_LOCALHOST_ONLY == "1" ]]; then
+            export WHITELIST_INTERFACES="127.0.0.1"
+            yq -i '.participants[0].whitelist-interfaces = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+            yq -i '.participants[0].whitelist-interfaces += env(WHITELIST_INTERFACES)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        fi
     fi
 
     yq -i '.participants[0].domain = env(ROS_DOMAIN_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
