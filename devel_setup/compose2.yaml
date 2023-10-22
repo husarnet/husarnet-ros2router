@@ -1,0 +1,46 @@
+# Comments:
+#   * This is a temporary solution allowing shared memory communication between host and docker container when
+#     using Fast DDS. To be removed when user will be able to change this permission to something else than 0644 
+#     (https://github.com/eProsima/Fast-DDS/blob/master/thirdparty/boost/include/boost/interprocess/permissions.hpp#L100) 
+#
+#  ** If the FASTRTPS_DEFAULT_PROFILES_FILE or CYCLONEDDS_URI envs are defined, then we need to bind mount the volume
+#     with the DDS config to the container  
+#
+# *** Optional envs the ROS user may want to set - we need to pass them to the container
+
+x-ros-config:
+  &ros-config
+  network_mode: host
+  ipc: host
+  pid: host
+  user: ${DOCKER_UID:-1000}:${DOCKER_GID:-1000} # *
+  volumes:
+    - /etc/group:/etc/group:ro                  # *
+    - /etc/passwd:/etc/passwd:ro                # *
+    - /etc/shadow:/etc/shadow:ro                # *
+    - /home/husarion/.ros:/home/husarion/.ros   # *
+    - ${FASTRTPS_DEFAULT_PROFILES_FILE:-dummy_volume_fastdds}:${FASTRTPS_DEFAULT_PROFILES_FILE:-/dummy_volume_fastdds}:ro  # **
+    - ${CYCLONEDDS_PATH:-dummy_volume_cyclonedds}:${CYCLONEDDS_PATH:-/dummy_volume_cyclonedds}:ro                          # **
+  environment:
+    - RMW_IMPLEMENTATION              # ***
+    - FASTRTPS_DEFAULT_PROFILES_FILE  # ***
+    - CYCLONEDDS_URI                  # ***
+    - ROS_DOMAIN_ID                   # ***
+    - ROS_LOCALHOST_ONLY
+
+services:
+
+  ros2router2:
+    build:
+      context: ../
+    <<: *ros-config
+    environment:
+      # - WHITELIST_INTERFACES="127.0.0.1" # if setting this param, you need to set "ROS_LOCALHOST_ONLY=1" on this host
+      - LISTENING_PORT=11888
+      - ID=0
+      - ROS_DOMAIN_ID
+      - LOCAL_TRANSPORT=shm # shm only
+
+volumes:
+  dummy_volume_fastdds:
+  dummy_volume_cyclonedds:
