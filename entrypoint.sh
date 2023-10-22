@@ -283,7 +283,7 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
 
     yq -i '.participants[0].domain = env(ROS_DOMAIN_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     yq -i '.participants[0].transport = env(LOCAL_TRANSPORT)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-
+    yq -i '.participants[0].ignore-participant-flags = env(IGNORE_PARTICIPANTS_FLAGS)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
     rm -f $CFG_PATH/config.yaml.tmp
     rm -f /tmp/loop_done_semaphore
