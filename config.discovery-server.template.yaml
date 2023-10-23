@@ -11,6 +11,7 @@ participants:
     kind: local
     domain: 0
     transport: udp
+    ignore-participant-flags: no_filter
 
   - name: DiscoveryServerParticipant
     kind: local-discovery-server

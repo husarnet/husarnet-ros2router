@@ -21,7 +21,7 @@ create_config_husarnet() {
         export ROS_DOMAIN_ID=0
     fi
 
-    if [[ -z "$LISTENING_PORT" && -z "$ROS_DISCOVERY_SERVER" ]]; then
+    if [[ -z "$DISCOVERY_SERVER_LISTENING_PORT" && -z "$ROS_DISCOVERY_SERVER" ]]; then
         echo "Launching Initial Peers config"
 
         cp config.wan.template.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
@@ -35,8 +35,8 @@ create_config_husarnet() {
         cp config.discovery-server.template.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         # Set the local Discovery Server ID to the first element of the ID variable
-        echo "Local Server ID: $ID"
-        yq -i '.participants[1].discovery-server-guid.id = env(ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        echo "Local Server ID: $DISCOVERY_SERVER_ID"
+        yq -i '.participants[1].discovery-server-guid.id = env(DISCOVERY_SERVER_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         #  ==============================================
         # Checking if listening for incomming connections
@@ -44,25 +44,25 @@ create_config_husarnet() {
 
         yq -i '.participants[1].listening-addresses = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
-        if [[ -n "$LISTENING_PORT" ]]; then
+        if [[ -n "$DISCOVERY_SERVER_LISTENING_PORT" ]]; then
             echo "> Server config"
             # Check if the value is a number and smaller than 65535
-            if [[ "$LISTENING_PORT" =~ ^[0-9]+$ && $LISTENING_PORT -lt 65535 ]]; then
+            if [[ "$DISCOVERY_SERVER_LISTENING_PORT" =~ ^[0-9]+$ && $DISCOVERY_SERVER_LISTENING_PORT -lt 65535 ]]; then
                 # DISCOVERY_SERVER_PORT is set and its value is smaller than 65535.
 
                 export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
 
-                echo "On different hosts, set the ROS_DISCOVERY_SERVER=[$LOCAL_IP]:$LISTENING_PORT"
+                echo "On different hosts, set the ROS_DISCOVERY_SERVER=[$LOCAL_IP]:$DISCOVERY_SERVER_LISTENING_PORT"
 
                 yq -i '.participants[1].listening-addresses += 
                         { 
                             "ip": env(LOCAL_IP),
-                            "port": env(LISTENING_PORT),
+                            "port": env(DISCOVERY_SERVER_LISTENING_PORT),
                             "transport": "udp"
                         }' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
             else
-                echo "Error: LISTENING_PORT value is not a valid number or is greater than or equal to 65535."
+                echo "Error: DISCOVERY_SERVER_LISTENING_PORT value is not a valid number or is greater than or equal to 65535."
                 # Insert other commands here if needed
                 exit 1
             fi
@@ -199,7 +199,7 @@ create_config_local() {
 
 WHITELIST_INTERFACES=$(strip_quotes "$WHITELIST_INTERFACES")
 ROS_DISCOVERY_SERVER=$(strip_quotes "$ROS_DISCOVERY_SERVER")
-LISTENING_PORT=$(strip_quotes "$LISTENING_PORT")
+DISCOVERY_SERVER_LISTENING_PORT=$(strip_quotes "$DISCOVERY_SERVER_LISTENING_PORT")
 FILTER=$(strip_quotes "$FILTER")
 
 if [[ $AUTO_CONFIG == "TRUE" ]]; then
@@ -279,11 +279,17 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
         if [[ $(yq '.participants[0].whitelist-interfaces' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml) == "[]" ]]; then
             yq -i 'del(.participants[0].whitelist-interfaces)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
         fi
+    else
+        if [[ $ROS_LOCALHOST_ONLY == "1" ]]; then
+            export WHITELIST_INTERFACES="127.0.0.1"
+            yq -i '.participants[0].whitelist-interfaces = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+            yq -i '.participants[0].whitelist-interfaces += env(WHITELIST_INTERFACES)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        fi
     fi
 
     yq -i '.participants[0].domain = env(ROS_DOMAIN_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     yq -i '.participants[0].transport = env(LOCAL_TRANSPORT)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-
+    yq -i '.participants[0].ignore-participant-flags = env(IGNORE_PARTICIPANTS_FLAGS)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
     rm -f $CFG_PATH/config.yaml.tmp
     rm -f /tmp/loop_done_semaphore
