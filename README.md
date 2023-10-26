@@ -57,7 +57,7 @@ Based on [DDS Router](https://github.com/eProsima/ros2router) project by eProsim
    --detach \
    --restart=unless-stopped \
    --network host \
-   husarnet/ros2router
+   husarnet/ros2router:1.2.0
    ```
 
 5. **Verify Connection:**
@@ -84,6 +84,57 @@ This guide provides a straightforward setup. Dive deeper and explore additional 
 | `LOCAL_TRANSPORT` | `udp` | `udp` for UDP based local DDS setup, `builtin` for a shared memory based local DDS setup (if using `builtin` with `--network host`, remember to add also `--ipc host `). |
 | `WHITELIST_INTERFACES` |  | Initially unset. This environment variable holds a list of IP addresses separated by commas, spaces, or semicolons. These IP addresses correspond to local network interfaces utilized by the local participant (that doesn't use Husarnet). This configuration is beneficial when there's a need to direct discovery traffic from a local participant solely to ROS 2 nodes that operate either on the host machine or only within a specified Docker network. Example value `127.0.0.1 172.22.0.1 172.19.0.1` etc.|
 
+## Topic Filtering
+
+The Docker image for the Husarnet ROS 2 Router can accept a portion of the typical ROS 2 Router configuration `*.yaml` file. This segment only includes the `allowlist`, `blocklist`, and `builtin-topics` sections. The provided configuration is then integrated with the automatically generated config file content.
+
+Here's a sample of the `filter.yaml` file:
+
+Example of the `filter.yaml` file:
+
+```yaml
+allowlist:
+  - name: "rt/camera/color/image_raw/theora"
+    type: "theora_image_transport::msg::dds_::Packet_"
+  - name: "rt/camera/color/image_raw/compressed"
+    type: "sensor_msgs::msg::dds_::CompressedImage_"
+  - name: "rt/cmd_vel"
+    type: "geometry_msgs::msg::dds_::Twist_"
+blocklist: []
+builtin-topics: []
+```
+
+Note that each ROS 2 topic name is preceded with `rX/` prefix (more [here](https://design.ros2.org/articles/topic_and_service_names.html)):
+
+| **ROS Subsystem** | **Prefix** |
+| - | - |
+| ROS Topics | `rt` |
+| ROS Service Request | `rq` |
+| ROS Service Response | `rr` |
+| ROS Service | `rs` |
+| ROS Parameter | `rp` |
+| ROS Action | `ra` |
+ 
+The repository includes the `create_filter.sh` script, which facilitates the automated creation of [DDS Router filter rules](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/configuration.html#id1):
+
+```bash
+curl -s https://raw.githubusercontent.com/husarnet/husarnet-ros2router/main/create_filter.sh > create_filter.sh
+chmod +x create_filter.sh
+./create_filter.sh /chatter /cmd_vel > filter.yaml
+```
+
+Modify the `filter.yaml` file if needed and assign it as a bind mount volume:
+
+```bash
+docker run \
+--detach \
+--restart=unless-stopped \
+--network host \
+-e ROS_DOMAIN_ID \
+-v $(pwd)/filter.yaml:/filter.yaml \
+husarnet/ros2router:1.2.0
+```
+
 ## Example Setups
 
 ### Setup 1
@@ -95,7 +146,7 @@ Husarnet operates on the Host OS. ROS 2 nodes on the host use `ROS_DOMAIN_ID=1`,
 ```yaml
 services:
   ddsrouter:
-    image: husarnet/ros2router
+    image: husarnet/ros2router:1.2.0
     restart: always
     network_mode: host
     environment:
@@ -109,7 +160,7 @@ docker run --name ddsrouter \
 --restart always \
 --network host \
 -e ROS_DOMAIN_ID=1 \
-husarnet/ros2router
+husarnet/ros2router:1.2.0
 ```
 
 ### Setup 2
@@ -121,7 +172,7 @@ Husarnet operates on the Host OSes with hostnames `host_a` and `host_b`, and `ho
 ```yaml
 services:
   ddsrouter:
-    image: husarnet/ros2router
+    image: husarnet/ros2router:1.2.0
     network_mode: host
     environment:
       - LISTENING_PORT=11888
@@ -133,7 +184,7 @@ services:
 ```yaml
 services:
   ddsrouter:
-    image: husarnet/ros2router
+    image: husarnet/ros2router:1.2.0
     network_mode: host
     environment:
       - ROS_DISCOVERY_SERVER=";;host_a:11888" # 2x;; becasuse ID of host_a DS is 2
@@ -145,7 +196,7 @@ services:
 ```yaml
 services:
   ddsrouter:
-    image: husarnet/ros2router
+    image: husarnet/ros2router:1.2.0
     network_mode: host
     environment:
       - ROS_DISCOVERY_SERVER=";;host_a:11888"
@@ -161,7 +212,7 @@ Husarnet runs on the Host OS. While ROS 2 nodes on the are in `ROS_DOMAIN_ID=0` 
 ```yaml
 services:
   ddsrouter:
-    image: husarnet/ros2router
+    image: husarnet/ros2router:1.2.0
     network_mode: host
     volumes:
       - ./filter.yaml:/filter.yaml
@@ -191,7 +242,7 @@ docker run \
 --restart=unless-stopped \
 --network host \
 -e ROS_DOMAIN_ID \
-husarnet/ros2router
+husarnet/ros2router:1.2.0
 ```
 
 3. Start a chatter demo:
@@ -220,7 +271,7 @@ docker run \
 --restart=unless-stopped \
 --network host \
 -e DISCOVERY_SERVER_PORT="11888" \
-husarnet/ros2router
+husarnet/ros2router:1.2.0
 ```
 
 3. Execute on `host_b`:
@@ -231,7 +282,7 @@ docker run \
 --restart=unless-stopped \
 --network host \
 -e ROS_DISCOVERY_SERVER="host_a:11888" \
-husarnet/ros2router
+husarnet/ros2router:1.2.0
 ```
 
 4. Start a chatter demo:
@@ -332,7 +383,7 @@ docker run --name ros2router \
   -v /etc/passwd:/etc/passwd:ro \
   -v /etc/shadow:/etc/shadow:ro \
   -e AUTO_CONFIG=FALSE \
-  husarnet/ros2router bash -c "ddsrouter -c /config.yaml -r 10"
+  husarnet/ros2router:1.2.0 bash -c "ddsrouter -c /config.yaml -r 10"
 ```
 
 5. Start a chatter demo:
@@ -353,22 +404,4 @@ ros2 run demo_nodes_cpp listener
 
 ## Topic Filtering
 
-The repo contains the `create_filter.sh` script allowing you to automate the process of creating a [DDS Router filter rules](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/configuration.html#id1):
 
-```bash
-curl -s https://raw.githubusercontent.com/husarnet/husarnet-ros2router/topic-filtering/create_filter.sh > create_filter.sh
-chmod +x create_filter.sh
-./create_filter.sh /chatter /cmd_vel > filter.yaml
-```
-
-Modify the `filter.yaml` file if needed and assign it as a bind mount volume:
-
-```bash
-docker run \
---detach \
---restart=unless-stopped \
---network host \
--e ROS_DOMAIN_ID \
--v $(pwd)/filter.yaml:/filter.yaml \
-husarnet/ros2router
-```
