@@ -5,7 +5,7 @@ services:
     network_mode: host
     ipc: host
     pid: host
-    user: ${UID:-1000}:${DOCKER_GID:-1000}
+    user: ${UID:-1000}:${GID:-1000}
     volumes:
       - /etc/group:/etc/group:ro
       - /etc/passwd:/etc/passwd:ro

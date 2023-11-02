@@ -5,6 +5,7 @@ services:
     network_mode: host
     ipc: host
     environment:
+      - LOCAL_TRANSPORT=builtin
       - DISCOVERY_SERVER_LISTENING_PORT=11811
       - DISCOVERY_SERVER_ID=0
       - ROS_LOCALHOST_ONLY=1

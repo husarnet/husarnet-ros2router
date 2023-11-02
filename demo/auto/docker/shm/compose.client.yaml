@@ -5,6 +5,7 @@ services:
     network_mode: host
     ipc: host
     environment:
+      - LOCAL_TRANSPORT=builtin
       - ROS_DISCOVERY_SERVER=rosbot2r:11811
       - DISCOVERY_SERVER_ID=10
       - ROS_LOCALHOST_ONLY=1
