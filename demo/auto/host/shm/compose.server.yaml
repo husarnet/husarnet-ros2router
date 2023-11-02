@@ -1,0 +1,17 @@
+services:
+
+  ds:
+    image: husarnet/ros2router:1.2.0
+    network_mode: host
+    ipc: host
+    pid: host
+    user: ${UID:-1000}:${DOCKER_GID:-1000}
+    volumes:
+      - /etc/group:/etc/group:ro
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/shadow:/etc/shadow:ro
+    environment:
+      - LOCAL_TRANSPORT=builtin
+      - DISCOVERY_SERVER_LISTENING_PORT=11811
+      - DISCOVERY_SERVER_ID=0
+      - ROS_LOCALHOST_ONLY=1
