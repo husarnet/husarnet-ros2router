@@ -10,13 +10,10 @@ services:
 
   listener:
     image: husarion/ros2-demo-nodes:humble
-    networks:
-      - network_listener
     command: ros2 run demo_nodes_cpp listener
 
 networks:
-  network_listener:
-    driver: bridge
+  default:
     ipam:
       config:
-        - subnet: 172.29.0.0/16
+        - subnet: 172.29.0.0/24
