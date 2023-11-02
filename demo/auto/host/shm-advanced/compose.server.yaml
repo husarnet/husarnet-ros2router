@@ -11,7 +11,6 @@ services:
       - /etc/passwd:/etc/passwd:ro
       - /etc/shadow:/etc/shadow:ro
     environment:
-      - LOCAL_TRANSPORT=builtin
+      - LOCAL_TRANSPORT=shm
       - DISCOVERY_SERVER_LISTENING_PORT=11811
       - DISCOVERY_SERVER_ID=0
-      - IGNORE_PARTICIPANTS_FLAGS=filter_different_host
