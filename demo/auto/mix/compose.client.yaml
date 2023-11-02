@@ -1,0 +1,14 @@
+services:
+
+  ds:
+    image: husarnet/ros2router:1.2.0
+    network_mode: host
+    environment:
+      - ROS_DISCOVERY_SERVER=rosbot2r:11811
+      - DISCOVERY_SERVER_ID=10
+      - WHITELIST_INTERFACES=${DOCKER0_IP:-172.17.0.1};127.0.0.1
+
+  listener:
+    image: husarion/ros2-demo-nodes:humble
+    network_mode: bridge                  # using docker0 network interface
+    command: ros2 run demo_nodes_cpp listener
