@@ -6,6 +6,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
+export UID=$(id -u)
+export GID=$(id -g)
 docker compose -f compose.client.yaml up -d
 
 export ROS_LOCALHOST_ONLY=1
