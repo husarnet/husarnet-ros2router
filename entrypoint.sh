@@ -52,8 +52,6 @@ create_config_husarnet() {
 
                 export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
 
-                echo "On different hosts, set the ROS_DISCOVERY_SERVER=[$LOCAL_IP]:$DISCOVERY_SERVER_LISTENING_PORT"
-
                 yq -i '.participants[1].listening-addresses += 
                         { 
                             "ip": env(LOCAL_IP),
@@ -61,6 +59,22 @@ create_config_husarnet() {
                             "transport": "udp"
                         }' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
+                # TIPS:
+
+                ## TIP 1:
+                echo "On different hosts, set the ROS_DISCOVERY_SERVER=[$LOCAL_IP]:$DISCOVERY_SERVER_LISTENING_PORT"
+
+                ## TIP 2:
+                cp /superclient.template.xml $CFG_PATH/superclient.xml
+                # Convert the decimal to a hexadecimal value
+                hex_server_id=$(printf '%.2X' $DISCOVERY_SERVER_ID)
+
+                # Replace XX in GUID_PREFIX with the hexadecimal value
+                export GUID_PREFIX=$(echo "44.53.XX.5F.45.50.52.4F.53.49.4D.41" | sed "s/XX/$hex_server_id/")
+
+                yq -i '.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer.+@prefix = env(GUID_PREFIX)' $CFG_PATH/superclient.xml
+                yq -i '.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer.metatrafficUnicastLocatorList.locator.udpv6.address = env(LOCAL_IP)' $CFG_PATH/superclient.xml
+                yq -i '.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer.metatrafficUnicastLocatorList.locator.udpv6.port = env(DISCOVERY_SERVER_LISTENING_PORT)' $CFG_PATH/superclient.xml
             else
                 echo "Error: DISCOVERY_SERVER_LISTENING_PORT value is not a valid number or is greater than or equal to 65535."
                 # Insert other commands here if needed

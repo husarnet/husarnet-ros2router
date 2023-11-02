@@ -5,8 +5,8 @@
 # docker compose exec dds_router bash 
 
 services:
-  dds_router:
-    image: husarnet/dds-router:v2.0.0
+  ros2router:
+    image: husarnet/ros2router:1.2.0
     restart: always
     network_mode: host
     ipc: host
@@ -17,14 +17,16 @@ services:
       - ../config_daemon.sh:/config_daemon.sh
       - ../entrypoint.sh:/entrypoint.sh
       - ./filter.yaml:/filter.yaml
+      - ../superclient.template.xml:/superclient.template.xml
+      - ../create_superclient.sh:/create_superclient.sh
       - ./test.sh:/test.sh
       - ./test2.sh:/test2.sh
     environment:
       ROS_DOMAIN_ID: 123
       ROS_DOMAIN_ID_2: 12
       ROS_DISCOVERY_SERVER: ";;;;rosbot2r:123;;;;[fc94:5fa1:c323:30bc:a87d:7485:23c4:f5a2]:9876"
-      LISTENING_PORT: "12345"
-      ID: 1
+      DISCOVERY_SERVER_LISTENING_PORT: "12345"
+      DISCOVERY_SERVER_ID: 1
       FILTER: |
         allowlist:
           - name: "rt/chatter2"
