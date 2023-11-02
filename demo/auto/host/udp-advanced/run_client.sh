@@ -8,7 +8,7 @@ trap cleanup EXIT
 
 docker compose -f compose.client.yaml up -d
 
-export ROS_LOCALHOST_ONLY=1
+export FASTRTPS_DEFAULT_PROFILES_FILE=$(pwd)/localhost-udp-only.xml
 
 # Run ROS2 listener
 ros2 run demo_nodes_cpp listener
