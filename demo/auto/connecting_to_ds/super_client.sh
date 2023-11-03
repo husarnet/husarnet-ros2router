@@ -1,5 +1,11 @@
 #!/bin/bash
 
+cleanup() {
+    echo "removing superclient.xml"
+    rm superclient.xml
+}
+trap cleanup EXIT
+
 docker run --rm -it \
   --network host \
   -e ROS_DISCOVERY_SERVER=rosbot2r:11811 \
