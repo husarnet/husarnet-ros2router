@@ -1,0 +1,3 @@
+## Warning
+
+You have to use `localhost-shm-only.xml` on each participant on each machine in the network (see [DDR Router docs](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/configuration.html?highlight=shm#custom-transport-descriptors) and [FastDDS docs](https://fast-dds.docs.eprosima.com/en/latest/fastdds/transport/shared_memory/shared_memory.html#sharedmemtransportdescriptor)) 
