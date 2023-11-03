@@ -1,6 +1,6 @@
 #!/bin/bash
 
-docker run --rm -it\
+docker run --rm -it \
   --network host \
   -e ROS_DISCOVERY_SERVER=rosbot2r:11811 \
   -e DISCOVERY_SERVER_ID=10 \
