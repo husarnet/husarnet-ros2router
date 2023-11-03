@@ -55,6 +55,7 @@ COPY config.discovery-server.template.yaml /
 COPY config.wan.template.yaml /
 COPY filter.yaml /
 COPY config_daemon.sh /
+COPY superclient.template.xml /
 
 ENV AUTO_CONFIG=TRUE
 ENV USE_HUSARNET=TRUE
