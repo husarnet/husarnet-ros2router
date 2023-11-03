@@ -9,7 +9,6 @@
 
     <participant profile_name="SHMParticipant">
         <rtps>
-            <useBuiltinTransports>true</useBuiltinTransports>
             <userTransports>
                 <transport_id>shm_transport</transport_id>
             </userTransports>

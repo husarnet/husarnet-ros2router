@@ -18,7 +18,6 @@ services:
       - ../entrypoint.sh:/entrypoint.sh
       - ./filter.yaml:/filter.yaml
       - ../superclient.template.xml:/superclient.template.xml
-      - ../create_superclient.sh:/create_superclient.sh
       - ./test.sh:/test.sh
       - ./test2.sh:/test2.sh
     environment:
