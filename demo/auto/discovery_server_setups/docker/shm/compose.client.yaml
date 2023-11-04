@@ -1,13 +1,13 @@
 services:
 
-  ds:
+  ros2router:
     image: husarnet/ros2router:1.3.0
     network_mode: host
     ipc: host
     environment:
       - LOCAL_TRANSPORT=builtin
-      - DISCOVERY_SERVER_LISTENING_PORT=11811
-      - DISCOVERY_SERVER_ID=0
+      - ROS_DISCOVERY_SERVER=rosbot2r:11811
+      - DISCOVERY_SERVER_ID=10
       - ROS_LOCALHOST_ONLY=1
 
   talker:
@@ -16,4 +16,4 @@ services:
     ipc: host
     environment:
       - ROS_LOCALHOST_ONLY=1
-    command: ros2 run demo_nodes_cpp talker
+    command: ros2 run demo_nodes_cpp listener

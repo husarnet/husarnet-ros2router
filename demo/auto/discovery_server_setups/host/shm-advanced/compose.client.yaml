@@ -1,0 +1,16 @@
+services:
+
+  ros2router:
+    image: husarnet/ros2router:1.3.0
+    network_mode: host
+    ipc: host
+    pid: host
+    user: ${MY_UID:-1000}:${MY_GID:-1000}
+    volumes:
+      - /etc/group:/etc/group:ro
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/shadow:/etc/shadow:ro
+    environment:
+      - LOCAL_TRANSPORT=shm
+      - ROS_DISCOVERY_SERVER=rosbot2r:11811
+      - DISCOVERY_SERVER_ID=10

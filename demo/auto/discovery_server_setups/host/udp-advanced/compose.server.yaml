@@ -1,9 +1,9 @@
 services:
 
-  ds:
+  ros2router:
     image: husarnet/ros2router:1.3.0
     network_mode: host
     environment:
-      - ROS_DISCOVERY_SERVER=rosbot2r:11811
-      - DISCOVERY_SERVER_ID=10
+      - DISCOVERY_SERVER_LISTENING_PORT=11811
+      - DISCOVERY_SERVER_ID=0
       - IGNORE_PARTICIPANTS_FLAGS=filter_different_host

@@ -1,6 +1,6 @@
 services:
 
-  ds:
+  ros2router:
     image: husarnet/ros2router:1.2.0
     network_mode: host
     environment:

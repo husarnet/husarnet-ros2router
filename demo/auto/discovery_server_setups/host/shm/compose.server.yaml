@@ -1,6 +1,6 @@
 services:
 
-  ds:
+  ros2router:
     image: husarnet/ros2router:1.3.0
     network_mode: host
     ipc: host
@@ -11,6 +11,8 @@ services:
       - /etc/passwd:/etc/passwd:ro
       - /etc/shadow:/etc/shadow:ro
     environment:
-      - LOCAL_TRANSPORT=shm
-      - ROS_DISCOVERY_SERVER=rosbot2r:11811
-      - DISCOVERY_SERVER_ID=10
+      - LOCAL_TRANSPORT=builtin
+      - DISCOVERY_SERVER_LISTENING_PORT=11811
+      - DISCOVERY_SERVER_ID=0
+      - ROS_LOCALHOST_ONLY=1 # use it with ROS 2 Humble
+      # - IGNORE_PARTICIPANTS_FLAGS=filter_different_host # use it with ROS 2 Iron
