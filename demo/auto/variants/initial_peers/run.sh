@@ -35,15 +35,5 @@ else
     export ROS_LOCALHOST_ONLY=1
 fi
 
-# Check the argument and run the corresponding ROS2 node
-if [[ "$1" == "listener" ]]; then
-    ros2 run demo_nodes_cpp listener
-elif [[ "$1" == "talker" ]]; then
-    ros2 run demo_nodes_cpp talker
-else
-    echo "Invalid argument. Please use 'listener' or 'talker'."
-    exit 1
-fi
-
 # Run the corresponding ROS2 node based on the argument
 ros2 run demo_nodes_cpp "$1"
