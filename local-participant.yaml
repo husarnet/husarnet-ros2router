@@ -1,0 +1,8 @@
+- name: LocalParticipant
+  kind: local
+  domain: 0
+  transport: udp
+- name: LocalDockerParticipant
+  kind: local
+  domain: 0
+  transport: shm

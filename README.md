@@ -57,7 +57,7 @@ Based on [DDS Router](https://github.com/eProsima/ros2router) project by eProsim
    --detach \
    --restart=unless-stopped \
    --network host \
-   husarnet/ros2router:1.2.0
+   husarnet/ros2router:1.4.0
    ```
 
 5. **Verify Connection:**
@@ -66,7 +66,64 @@ Based on [DDS Router](https://github.com/eProsima/ros2router) project by eProsim
 
 This guide provides a straightforward setup. Dive deeper and explore additional options and examples in the sections below.
 
+## General Example
+
+The all-in-one example, that should be fine in most cases (both with ROS 2 n) is in the `demo/auto/general` directory.
+
+```yaml
+services:
+  ros2router:
+    image: husarnet/ros2router:1.4.0
+    network_mode: host
+    ipc: shareable
+    volumes:
+      - ./filter.yaml:/filter.yaml
+    environment:
+      - DISCOVERY_SERVER_ID=2
+      - DISCOVERY_SERVER_LISTENING_PORT=8888
+      - ROS_LOCALHOST_ONLY=1
+      - ROS_DISTRO
+      - |
+        LOCAL_PARTICIPANT=
+          - name: LocalParticipant
+            kind: local
+            domain: 0
+            transport: udp
+          - name: LocalDockerParticipant
+            kind: local
+            domain: 123
+            transport: shm
+
+  talker:
+    image: husarion/ros2-demo-nodes:humble
+    ipc: service:ros2router
+    network_mode: service:ros2router
+    volumes:
+      - ./shm-only.xml:/shm-only.xml
+    environment:
+      - FASTRTPS_DEFAULT_PROFILES_FILE=/shm-only.xml
+      - ROS_DOMAIN_ID=123
+    command: ros2 run demo_nodes_cpp talker
+
+# On the same host, to use LocalParticipant, just execute:
+# export ROS_LOCAHOST_ONLY=1
+# ros2 run demo_nodes_cpp talker
+
+# On the other host, to listen to /chatter topic:
+# 
+# ROS 2 Iron (assuming "laptop" is the husarnet hostname of the host running ros2router):
+# export ROS_DISCOVERY_SERVER=;;laptop:8888
+# ros2 run demo_nodes_cpp listener
+# 
+# ROS 2 Humble:
+# Modify superclient.xml to point to the host with ros2router (line 31)
+# export FASTRTPS_DEFAULT_PROFILES_FILE=${PWD}/superclient.xml
+# ros2 run demo_nodes_cpp listener
+```
+
 ## Environment Variables
+
+### Husarnet VPN related
 
 | env | default value | description |
 | - | - | - |
@@ -75,14 +132,34 @@ This guide provides a straightforward setup. Dive deeper and explore additional 
 | `ROS_DISCOVERY_SERVER` | | By default is unset. Set it to one of the following formats: `<husarnet-ipv6-addr>:<discovery-server-port>` or `<husarnet-hostname>:<discovery-server-port>` to connect as the Client to the device acting as a Discovery Server. To specify multiple addresses, use semicolons as separators. The server's ID is determined by its position in the list (starting from `0`). If there's an empty space between semicolons, it indicates that the respective ID is available. Eg. `ROS_DISCOVERY_SERVER=";;abc:123;;;def:456"` means that the ID of `abc:123` is `2` and ID of `def` is `5`|
 | `DISCOVERY_SERVER_ID` | `0` | The ID of the local Discovery Server |
 | `DISCOVERY_SERVER_LISTENING_PORT` |  | By default is unset. Set it to a number between `0` to `65535` to activate DDS Router in the Discovery Server - Server config. |
-| `ROS_LOCALHOST_ONLY` | `0` | If set to `1` it's equivalent to the `WHITELIST_INTERFACES="127.0.0.1"`  |
-| `IGNORE_PARTICIPANTS_FLAGS` | `no_filter` | See [DDS Router docs](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/configuration.html?highlight=filter#ignore-participant-flags) |
-| `ROS_DOMAIN_ID` | `0` | from `0` to `232`. |
-| `ROS_DOMAIN_ID_2` | `77` | from `0` to `232`. Set it only if `USE_HUSARNET=FALSE` or `FAIL_IF_HUSARNET_NOT_AVAILABLE=FALSE`. This will setup the DDS Router to work in the local network using the standard DDS discovery mechnism (multicasting). Note that the second peer need to have different `ROS_DOMAIN_ID` is using the DDS Router in the local network to prevent the unwanted messages retransmission loop in the DDS network. |
 | `EXIT_IF_HUSARNET_NOT_AVAILABLE` | `FALSE` | When set to `FALSE`, if the Husarnet Daemon HTTP API is unreachable, the system behaves as though `USE_HUSARNET=FALSE`. When set to `TRUE`, the container stops if it cannot connect to the Husarnet Daemon API. |
 | `EXIT_IF_HOST_TABLE_CHANGED` | `FALSE` | Valid only if `DS_LISTENING_PORT` and `ROS_DISCOVERY_SERVER` envs are unset and thus starting the **Initial Peers** config. This env is useful in connection with `restart: always` Docker policy - it restarts the DDS Router with a new Initial Peers list applied (the Initial Peers list is not updated by the DDS Router in runtime)  |
-| `LOCAL_TRANSPORT` | `udp` | `udp` for UDP based local DDS setup, `builtin` for a shared memory based local DDS setup (if using `builtin` with `--network host`, remember to add also `--ipc host `). |
-| `WHITELIST_INTERFACES` |  | Initially unset. This environment variable holds a list of IP addresses separated by commas, spaces, or semicolons. These IP addresses correspond to local network interfaces utilized by the local participant (that doesn't use Husarnet). This configuration is beneficial when there's a need to direct discovery traffic from a local participant solely to ROS 2 nodes that operate either on the host machine or only within a specified Docker network. Example value `127.0.0.1 172.22.0.1 172.19.0.1` etc.|
+
+### Localhost related
+
+| env | default value | description |
+| - | - | - |
+| `ROS_LOCALHOST_ONLY` | `0` | If set to `1` it's equivalent to the `whitelist-interfaces="127.0.0.1"` (for ROS 2 Humble) or `ignore-participant-flags = "filter_different_host"` (for ROS 2 Iron) |
+| `LOCAL_PARTICIPANT` | | set the non-husarnet, [local participant](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/simple.html#user-manual-participants-simple). It's alternative to providing `/local-participant.yaml` as a volume |
+| `FILTER` |  |  It's alternative to providing `/filter.yaml` as a volume |
+
+example for `LOCAL_PARTICIPANT` env:
+
+```yaml
+services:
+
+  ros2router:
+    image: husarnet/husarnet-ros2router:1.4.0
+    network_mode: host
+    environment:
+      LOCAL_PARTICIPANT: |
+        - name: SimpleParticipantLocal
+          kind: local
+          domain: 123
+          transport: udp
+      ROS_LOCALHOST_ONLY: 1 # adds localhost only setup for LOCAL_PARTICIPANT
+      ROS_DISTRO: iron
+```
 
 ## Topic Filtering
 
@@ -402,6 +479,5 @@ export ROS_DOMAIN_ID=0
 ros2 run demo_nodes_cpp listener
 ```
 
-## Topic Filtering
 
 

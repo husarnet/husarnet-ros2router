@@ -1,19 +1,8 @@
 version: v3.0
 
-allowlist:
-  - name: "rt/*"
-blocklist: []
-builtin-topics: []
-
 participants:
 
-  - name: SimpleParticipant
-    kind: local
-    domain: 0
-    transport: udp
-    ignore-participant-flags: no_filter
-
-  - name: DiscoveryServerParticipant
+  - name: RemoteParticipant
     kind: local-discovery-server
     discovery-server-guid:
       ros-discovery-server: true

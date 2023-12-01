@@ -50,32 +50,27 @@ RUN curl -L https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_l
 COPY --from=ddsrouter_builder /dds_router /dds_router
 
 COPY entrypoint.sh /
-COPY config.local.template.yaml /
+COPY config.lan.template.yaml /
 COPY config.discovery-server.template.yaml /
 COPY config.wan.template.yaml /
 COPY filter.yaml /
+COPY local-participant.yaml /
 COPY config_daemon.sh /
 COPY superclient.template.xml /
 
 ENV AUTO_CONFIG=TRUE
 ENV USE_HUSARNET=TRUE
-
 ENV ROS_DISCOVERY_SERVER=
-ENV DISCOVERY_SERVER_LISTENING_PORT=
 ENV DISCOVERY_SERVER_ID=0
-
-ENV ROS_DOMAIN_ID=0
-ENV ROS_DOMAIN_ID_2=77
-ENV ROS_LOCALHOST_ONLY=0
+ENV DISCOVERY_SERVER_LISTENING_PORT=
 
 ENV EXIT_IF_HUSARNET_NOT_AVAILABLE=FALSE
 ENV EXIT_IF_HOST_TABLE_CHANGED=FALSE
 
-ENV LOCAL_TRANSPORT=udp
+ENV ROS_LOCALHOST_ONLY=0
 
-ENV WHITELIST_INTERFACES=
-ENV IGNORE_PARTICIPANTS_FLAGS=no_filter
 ENV FILTER=
+ENV LOCAL_PARTICIPANT=
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "ddsrouter", "-c", "/var/tmp/DDS_ROUTER_CONFIGURATION.yaml" ]

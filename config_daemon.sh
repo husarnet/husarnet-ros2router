@@ -35,7 +35,7 @@ while true; do
 
             peers_no=$(echo $peers | yq '. | length')
 
-            yq -i 'del(.participants[1].connection-addresses[0])' $CFG_PATH/config.yaml
+            yq -i 'del(.participants[0].connection-addresses[0])' $CFG_PATH/config.yaml
 
             for ((i = 0; i < $peers_no; i++)); do
                 # Extract husarnet_address for the current peer using jq
@@ -43,7 +43,7 @@ while true; do
                 export address=$(echo $peers | yq -r '.[env(i)]')
 
                 if [ "$local_ip" != "$address" ]; then
-                    yq -i '.participants[1].connection-addresses += {"ip": env(address), "port": 11811} ' $CFG_PATH/config.yaml
+                    yq -i '.participants[0].connection-addresses += {"ip": env(address), "port": 11811} ' $CFG_PATH/config.yaml
                 fi
             done
 
@@ -57,7 +57,7 @@ while true; do
     if [[ -n "${FILTER}" ]]; then
         yq -i '. * env(FILTER)' $CFG_PATH/config.yaml
     else
-        yq -i '. * load("filter.yaml")' $CFG_PATH/config.yaml
+        yq -i '. * load("/filter.yaml")' $CFG_PATH/config.yaml
     fi
 
     if ! cmp -s $CFG_PATH/config.yaml $CFG_PATH/config.yaml.tmp; then
