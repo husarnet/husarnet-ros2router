@@ -1,23 +1,22 @@
 services:
+  talker:
+    image: husarion/ros2-demo-nodes:humble
+    ipc: service:ros2router
+    network_mode: service:ros2router
+    volumes:
+      - ./shm-only.xml:/shm-only.xml
+    environment:
+      - FASTRTPS_DEFAULT_PROFILES_FILE=/shm-only.xml
+    command: ros2 run demo_nodes_cpp talker
 
   ros2router:
-    build:
-      context: ../../../
+    image: husarnet/ros2router:1.4.0
     network_mode: host
-    volumes:
-      - ../../../entrypoint.sh:/entrypoint.sh
-      - ../../../config_daemon.sh:/config_daemon.sh
-      - ../../../local-participant.yaml:/local-participant.yaml
+    ipc: shareable # if you plan to restart this service ipc:host might be a better solution
     environment:
-      # LOCAL_PARTICIPANT: |
-      #   - name: SimpleParticipantLocal
-      #     kind: local
-      #     domain: 0
-      #     transport: udp
-      # # - ROS_LOCALHOST_ONLY=1 # use it with ROS 2 Humble
-      # IGNORE_PARTICIPANTS_FLAGS: filter_different_host # use it with ROS 2 Iron
-      USE_HUSARNET: FALSE
-    entrypoint: tail -f /dev/null
+      - USE_HUSARNET=FALSE
+      - ROS_LOCALHOST_ONLY
+      - ROS_DISTRO
 
 # 1st Host (LAN only)
 # docker compose up -d

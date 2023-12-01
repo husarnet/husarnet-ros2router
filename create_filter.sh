@@ -11,7 +11,7 @@ echo "allowlist:"
 # Loop over each topic provided as argument
 for TOPIC in "$@"; do
     # Fetch details using 'ros2 topic info'
-    INFO=$(ros2 topic info $TOPIC)
+    INFO=$(ros2 topic info -v $TOPIC)
 
     # Extract type of the message
     TYPE=$(echo "$INFO" | grep "Type:" | awk '{print $2}')
@@ -29,9 +29,23 @@ for TOPIC in "$@"; do
         continue
     fi
 
-    # Print entry for current topic
+    # Extract QoS settings
+    RELIABILITY=$(echo "$INFO" | grep "Reliability:" | awk '{print $2}')
+    DURABILITY=$(echo "$INFO" | grep "Durability:" | awk '{print $2}')
+
+    # Convert QoS settings to the desired format
+    RELIABILITY_BOOL="false"
+    [ "$RELIABILITY" == "RELIABLE" ] && RELIABILITY_BOOL="true"
+    DURABILITY_BOOL="false"
+    [ "$DURABILITY" == "TRANSIENT_LOCAL" ] && DURABILITY_BOOL="true"
+
+    # Print entry for current topic with QoS settings
     echo "  - name: \"rt$TOPIC\""
     echo "    type: \"$DDS_TYPE\""
+    echo "    qos:"
+    echo "      reliability: $RELIABILITY_BOOL"
+    echo "      durability: $DURABILITY_BOOL"
+
 done
 
 echo "blocklist: []"

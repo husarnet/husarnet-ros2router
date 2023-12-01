@@ -1,0 +1,48 @@
+services:
+  ros2router:
+    image: husarnet/ros2router:1.4.0
+    network_mode: host
+    ipc: shareable
+    volumes:
+      - ./filter.yaml:/filter.yaml
+    environment:
+      - DISCOVERY_SERVER_ID=2
+      - DISCOVERY_SERVER_LISTENING_PORT=8888
+      - ROS_LOCALHOST_ONLY=1
+      - ROS_DISTRO
+      - |
+        LOCAL_PARTICIPANT=
+          - name: LocalParticipant
+            kind: local
+            domain: 0
+            transport: udp
+          - name: LocalDockerParticipant
+            kind: local
+            domain: 123
+            transport: shm
+
+  talker:
+    image: husarion/ros2-demo-nodes:humble
+    ipc: service:ros2router
+    network_mode: service:ros2router
+    volumes:
+      - ./shm-only.xml:/shm-only.xml
+    environment:
+      - FASTRTPS_DEFAULT_PROFILES_FILE=/shm-only.xml
+      - ROS_DOMAIN_ID=123
+    command: ros2 run demo_nodes_cpp talker
+
+# On the same host, to use LocalParticipant, just execute:
+# export ROS_LOCAHOST_ONLY=1
+# ros2 run demo_nodes_cpp talker
+
+# On the other host, to listen to /chatter topic:
+# 
+# ROS 2 Iron (assuming "laptop" is the husarnet hostname of the host running ros2router):
+# export ROS_DISCOVERY_SERVER=;;laptop:8888
+# ros2 run demo_nodes_cpp listener
+# 
+# ROS 2 Humble:
+# Modify superclient.xml to point to the host with ros2router (line 31)
+# export FASTRTPS_DEFAULT_PROFILES_FILE=${PWD}/superclient.xml
+# ros2 run demo_nodes_cpp listener
