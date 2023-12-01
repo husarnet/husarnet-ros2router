@@ -68,7 +68,7 @@ This guide provides a straightforward setup. Dive deeper and explore additional 
 
 ## General Example
 
-The all-in-one example, that should be fine in most cases (both with ROS 2 n) is in the `demo/auto/general` directory.
+The all-in-one example, that should be fine in most cases (both with ROS 2 nodes running on host and in Docker containers) is in the `demo/auto/general` directory.
 
 ```yaml
 services:
