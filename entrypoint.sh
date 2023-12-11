@@ -24,25 +24,25 @@ create_config_husarnet() {
     if [[ -z "$DISCOVERY_SERVER_LISTENING_PORT" && -z "$ROS_DISCOVERY_SERVER" ]]; then
         echo "Launching Initial Peers config"
 
-        cp config.wan.template.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants += load("/config.wan.template.yaml)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
-        yq -i '(.participants[] | select(.name == "RemoteParticipant").listening-addresses[0].ip) = strenv(LOCAL_IP)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-        yq -i '(.participants[] | select(.name == "RemoteParticipant").connection-addresses[0].ip) = strenv(LOCAL_IP)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "HusarnetParticipant").listening-addresses[0].ip) = strenv(LOCAL_IP)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "HusarnetParticipant").connection-addresses[0].ip) = strenv(LOCAL_IP)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     else
         echo "Launching ROS Discovery Server config"
 
-        cp config.discovery-server.template.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants += load("/config.discovery-server.template.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         # Set the local Discovery Server ID to the first element of the ID variable
         echo "Local Server ID: $DISCOVERY_SERVER_ID"
-        yq -i '(.participants[] | select(.name == "RemoteParticipant").discovery-server-guid.id) = env(DISCOVERY_SERVER_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "HusarnetParticipant").discovery-server-guid.id) = env(DISCOVERY_SERVER_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         #  ==============================================
         # Checking if listening for incomming connections
         #  ===============================================
 
-        yq -i '(.participants[] | select(.name == "RemoteParticipant").listening-addresses) = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "HusarnetParticipant").listening-addresses) = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         if [[ -n "$DISCOVERY_SERVER_LISTENING_PORT" ]]; then
             echo "> Server config"
@@ -52,7 +52,7 @@ create_config_husarnet() {
 
                 export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
 
-                yq -i '(.participants[] | select(.name == "RemoteParticipant").listening-addresses) += 
+                yq -i '(.participants[] | select(.name == "HusarnetParticipant").listening-addresses) += 
                         { 
                             "ip": env(LOCAL_IP),
                             "port": env(DISCOVERY_SERVER_LISTENING_PORT),
@@ -81,14 +81,14 @@ create_config_husarnet() {
                 exit 1
             fi
         else
-            yq -i 'del(.participants[] | select(.name == "RemoteParticipant").listening-addresses)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+            yq -i 'del(.participants[] | select(.name == "HusarnetParticipant").listening-addresses)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
         fi
 
         #  ==============================================
         # Checking if connecting to other Discovery Servers
         #  ===============================================
 
-        yq -i '(.participants[] | select(.name == "RemoteParticipant").connection-addresses) = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "HusarnetParticipant").connection-addresses) = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         if [[ -n "$ROS_DISCOVERY_SERVER" ]]; then
             echo "> Client config"
@@ -180,7 +180,7 @@ create_config_husarnet() {
                     export SERVER_ID=${current_id}
                     ((current_id++))
 
-                    yq -i '(.participants[] | select(.name == "RemoteParticipant").connection-addresses) += 
+                    yq -i '(.participants[] | select(.name == "HusarnetParticipant").connection-addresses) += 
                             { 
                                 "discovery-server-guid": 
                                 { 
@@ -231,14 +231,10 @@ create_config_husarnet() {
             yq -i 'del(.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer[0])' $CFG_PATH/superclient.xml
             yq -i 'del(.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer[0])' $CFG_PATH/superclient.xml
         else
-            yq -i 'del(.participants[] | select(.name == "RemoteParticipant").connection-addresses)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+            yq -i 'del(.participants[] | select(.name == "HusarnetParticipant").connection-addresses)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
         fi
 
     fi
-}
-
-create_config_lan_only() {
-    cp config.lan.template.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 }
 
 WHITELIST_INTERFACES=$(strip_quotes "$WHITELIST_INTERFACES")
@@ -248,10 +244,16 @@ FILTER=$(strip_quotes "$FILTER")
 
 if [[ $AUTO_CONFIG == "TRUE" ]]; then
 
+    cp local-participant.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+
+    if [[ -n "${LOCAL_PARTICIPANT}" ]]; then
+        yq -i '. * env(LOCAL_PARTICIPANT)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    fi
+
     # Check the value of USE_HUSARNET
     if [[ $USE_HUSARNET == "FALSE" || $USE_HUSARNET == false || $USE_HUSARNET == 0 ]]; then
-        echo "Using LAN setup."
-        create_config_lan_only
+        # echo "Using LAN setup."
+        echo "Don't using Husarnet participants."
         export husarnet_ready=false
     else
         for i in {1..7}; do
@@ -262,15 +264,8 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
                 if [ "$(echo $husarnet_api_response | yq -r .result.is_ready)" != "true" ]; then
                     if [[ $i -eq 7 ]]; then
                         echo "Husarnet API is not ready."
-                        if [[ $EXIT_IF_HUSARNET_NOT_AVAILABLE == "TRUE" ]]; then
-                            echo "Error: Exiting..."
-                            exit 1
-                        else
-                            echo "Using LAN setup."
-                            create_config_lan_only
-                            export husarnet_ready=false
-                            break
-                        fi
+                        echo "Error: Exiting..."
+                        exit 1
                     else
                         echo "Husarnet API is not ready"
                         sleep 2
@@ -284,15 +279,8 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
             else
                 if [[ $i -eq 5 ]]; then
                     echo "Can't reach Husarnet Daemon HTTP API after 5 retries"
-                    if [[ $EXIT_IF_HUSARNET_NOT_AVAILABLE == "TRUE" ]]; then
-                        echo "Error: Exiting..."
-                        exit 1
-                    else
-                        echo "Using LAN setup."
-                        create_config_lan_only
-                        export husarnet_ready=false
-                        break
-                    fi
+                    echo "Error: Exiting..."
+                    exit 1
                 else
                     echo "Failed to connect to Husarnet API endpoint. Retrying in 2 seconds..."
                     sleep 2
@@ -302,22 +290,20 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
 
     fi
 
-    if [[ -n "${LOCAL_PARTICIPANT}" ]]; then
-        yq -i '.participants += env(LOCAL_PARTICIPANT)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-    else
-        yq -i '.participants += load("/local-participant.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-    fi
-
     if [[ "$ROS_DISTRO" == "iron" ]]; then
-        yq -i '(.participants[] | select(.name == "LocalParticipant").ignore-participant-flags) = "filter_different_host"' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-        yq -i '(.participants[] | select(.name == "LocalParticipant").whitelist-interfaces) = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "LocalHostParticipant").ignore-participant-flags) = "filter_different_host"' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "LocalHostParticipant").whitelist-interfaces) = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     else
-        yq -i '(.participants[] | select(.name == "LocalParticipant").ignore-participant-flags) = "no_filter"' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-        yq -i '(.participants[] | select(.name == "LocalParticipant").whitelist-interfaces) = [ "127.0.0.1" ]' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "LocalHostParticipant").ignore-participant-flags) = "no_filter"' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "LocalHostParticipant").whitelist-interfaces) = [ "127.0.0.1" ]' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     fi
 
-    if [[ $ROS_LOCALHOST_ONLY == "1" ]]; then
-        # TODO
+    if [[ $ROS_LOCALHOST_ONLY == "0" ]]; then
+        yq -i '.participants += load("/config.lan.template.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    fi
+
+    if [ -n "${ROS_DOMAIN_ID}" ]; then
+        yq -i '.participants[].domain |= env(ROS_DOMAIN_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     fi
 
     rm -f $CFG_PATH/config.yaml.tmp

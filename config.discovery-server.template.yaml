@@ -1,21 +1,18 @@
-version: v3.0
 
-participants:
-
-  - name: RemoteParticipant
-    kind: local-discovery-server
-    discovery-server-guid:
-      ros-discovery-server: true
-      id: 0
-    listening-addresses:
-      - ip: 127.0.0.1
-        port: 11811
-        transport: udp
-    connection-addresses:
-      - discovery-server-guid:
-          ros-discovery-server: true
-          id: 1
-        addresses:
-          - ip: 127.0.0.1
-            port: 11811
-            transport: udp
+- name: HusarnetParticipant
+  kind: local-discovery-server
+  discovery-server-guid:
+    ros-discovery-server: true
+    id: 0
+  listening-addresses:
+    - ip: 127.0.0.1
+      port: 11811
+      transport: udp
+  connection-addresses:
+    - discovery-server-guid:
+        ros-discovery-server: true
+        id: 1
+      addresses:
+        - ip: 127.0.0.1
+          port: 11811
+          transport: udp
