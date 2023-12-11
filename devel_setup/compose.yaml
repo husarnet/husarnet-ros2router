@@ -6,36 +6,31 @@
 
 services:
   ros2router:
-    image: husarnet/ros2router:1.2.0
-    restart: always
+    build:
+      context: ../
+      dockerfile: Dockerfile
     network_mode: host
     ipc: host
     volumes:
-      - ../config.discovery-server.template.yaml:/config.discovery-server.template.yaml
-      - ../config.wan.template.yaml:/config.wan.template.yaml
-      - ../config.local.template.yaml:/config.local.template.yaml
       - ../config_daemon.sh:/config_daemon.sh
       - ../entrypoint.sh:/entrypoint.sh
       - ./filter.yaml:/filter.yaml
-      - ../superclient.template.xml:/superclient.template.xml
-      - ./test.sh:/test.sh
       - ./test2.sh:/test2.sh
     environment:
       ROS_DOMAIN_ID: 123
-      ROS_DOMAIN_ID_2: 12
       ROS_DISCOVERY_SERVER: ";;;;rosbot2r:123;;;;[fc94:5fa1:c323:30bc:a87d:7485:23c4:f5a2]:9876"
       DISCOVERY_SERVER_LISTENING_PORT: "12345"
       DISCOVERY_SERVER_ID: 1
-      FILTER: |
-        allowlist:
-          - name: "rt/chatter2"
-            type: "std_msgs::msg::dds_::String_"
-        blocklist:
-          - name: "rt/rosout"
-            type: "rcl_interfaces::msg::dds_::Log_"
-        builtin-topics: []
+      # FILTER: |
+      #   allowlist:
+      #     - name: "rt/chatter2"
+      #       type: "std_msgs::msg::dds_::String_"
+      #   blocklist:
+      #     - name: "rt/rosout"
+      #       type: "rcl_interfaces::msg::dds_::Log_"
+      #   builtin-topics: []
 
       # - LOCAL_TRANSPORT=builtin
       # - EXIT_IF_HUSARNET_NOT_AVAILABLE=TRUE
       # - EXIT_IF_HOST_TABLE_CHANGED=TRUE
-    # entrypoint: sleep 3600
+    entrypoint: sleep 3600

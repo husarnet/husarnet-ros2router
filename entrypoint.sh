@@ -27,8 +27,8 @@ create_config_husarnet() {
         cp config.wan.template.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
-        yq -i '.participants[0].listening-addresses[0].ip = strenv(LOCAL_IP)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-        yq -i '.participants[0].connection-addresses[0].ip = strenv(LOCAL_IP)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "RemoteParticipant").listening-addresses[0].ip) = strenv(LOCAL_IP)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "RemoteParticipant").connection-addresses[0].ip) = strenv(LOCAL_IP)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     else
         echo "Launching ROS Discovery Server config"
 
@@ -36,13 +36,13 @@ create_config_husarnet() {
 
         # Set the local Discovery Server ID to the first element of the ID variable
         echo "Local Server ID: $DISCOVERY_SERVER_ID"
-        yq -i '.participants[0].discovery-server-guid.id = env(DISCOVERY_SERVER_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "RemoteParticipant").discovery-server-guid.id) = env(DISCOVERY_SERVER_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         #  ==============================================
         # Checking if listening for incomming connections
         #  ===============================================
 
-        yq -i '.participants[0].listening-addresses = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "RemoteParticipant").listening-addresses) = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         if [[ -n "$DISCOVERY_SERVER_LISTENING_PORT" ]]; then
             echo "> Server config"
@@ -52,7 +52,7 @@ create_config_husarnet() {
 
                 export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
 
-                yq -i '.participants[0].listening-addresses += 
+                yq -i '(.participants[] | select(.name == "RemoteParticipant").listening-addresses) += 
                         { 
                             "ip": env(LOCAL_IP),
                             "port": env(DISCOVERY_SERVER_LISTENING_PORT),
@@ -81,14 +81,14 @@ create_config_husarnet() {
                 exit 1
             fi
         else
-            yq -i 'del(.participants[0].listening-addresses)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+            yq -i 'del(.participants[] | select(.name == "RemoteParticipant").listening-addresses)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
         fi
 
         #  ==============================================
         # Checking if connecting to other Discovery Servers
         #  ===============================================
 
-        yq -i '.participants[0].connection-addresses = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "RemoteParticipant").connection-addresses) = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         if [[ -n "$ROS_DISCOVERY_SERVER" ]]; then
             echo "> Client config"
@@ -180,7 +180,7 @@ create_config_husarnet() {
                     export SERVER_ID=${current_id}
                     ((current_id++))
 
-                    yq -i '.participants[0].connection-addresses += 
+                    yq -i '(.participants[] | select(.name == "RemoteParticipant").connection-addresses) += 
                             { 
                                 "discovery-server-guid": 
                                 { 
@@ -231,7 +231,7 @@ create_config_husarnet() {
             yq -i 'del(.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer[0])' $CFG_PATH/superclient.xml
             yq -i 'del(.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer[0])' $CFG_PATH/superclient.xml
         else
-            yq -i 'del(.participants[0].connection-addresses)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+            yq -i 'del(.participants[] | select(.name == "RemoteParticipant").connection-addresses)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
         fi
 
     fi
@@ -239,7 +239,6 @@ create_config_husarnet() {
 
 create_config_lan_only() {
     cp config.lan.template.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-    # yq -i '.participants[0].domain = env(ROS_DOMAIN_ID_2)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 }
 
 WHITELIST_INTERFACES=$(strip_quotes "$WHITELIST_INTERFACES")
@@ -309,15 +308,16 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
         yq -i '.participants += load("/local-participant.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     fi
 
-    if [[ $ROS_LOCALHOST_ONLY == "1" ]]; then
-        if [[ "$ROS_DISTRO" == "iron" ]]; then
-            yq -i '.participants[1].ignore-participant-flags = "filter_different_host"' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-            yq -i '.participants[1].whitelist-interfaces = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-        else
-            yq -i '.participants[1].ignore-participant-flags = "no_filter"' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-            yq -i '.participants[1].whitelist-interfaces = [ "127.0.0.1" ]' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-        fi
+    if [[ "$ROS_DISTRO" == "iron" ]]; then
+        yq -i '(.participants[] | select(.name == "LocalParticipant").ignore-participant-flags) = "filter_different_host"' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "LocalParticipant").whitelist-interfaces) = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    else
+        yq -i '(.participants[] | select(.name == "LocalParticipant").ignore-participant-flags) = "no_filter"' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select(.name == "LocalParticipant").whitelist-interfaces) = [ "127.0.0.1" ]' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    fi
 
+    if [[ $ROS_LOCALHOST_ONLY == "1" ]]; then
+        # TODO
     fi
 
     rm -f $CFG_PATH/config.yaml.tmp
