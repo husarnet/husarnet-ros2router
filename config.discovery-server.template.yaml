@@ -1,4 +1,3 @@
-
 - name: HusarnetParticipant
   kind: local-discovery-server
   discovery-server-guid:

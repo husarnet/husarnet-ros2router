@@ -24,7 +24,7 @@ create_config_husarnet() {
     if [[ -z "$DISCOVERY_SERVER_LISTENING_PORT" && -z "$ROS_DISCOVERY_SERVER" ]]; then
         echo "Launching Initial Peers config"
 
-        yq -i '.participants += load("/config.wan.template.yaml)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants += load("/config.wan.template.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
         yq -i '(.participants[] | select(.name == "HusarnetParticipant").listening-addresses[0].ip) = strenv(LOCAL_IP)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
