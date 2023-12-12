@@ -63,6 +63,10 @@ while true; do
     yq -i '(.allowlist[] | select(.name)).name |= sub("{{env \"ROS_NAMESPACE\"}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
     yq -i '(.blocklist[] | select(.name)).name |= sub("{{env \"ROS_NAMESPACE\"}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
     yq -i '(.builtin-topics[] | select(.name)).name |= sub("{{env \"ROS_NAMESPACE\"}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
+    
+    # remove comments
+    yq -i '... comments=""' $CFG_PATH/config.yaml
+
     # Use sed to replace '//' with '/'
     sed -i 's#//#/#g' $CFG_PATH/config.yaml
 
