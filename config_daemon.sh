@@ -60,6 +60,12 @@ while true; do
         yq -i '. * load("/filter.yaml")' $CFG_PATH/config.yaml
     fi
 
+    yq -i '(.allowlist[] | select(.name)).name |= sub("{{env \"ROS_NAMESPACE\"}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
+    yq -i '(.blocklist[] | select(.name)).name |= sub("{{env \"ROS_NAMESPACE\"}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
+    yq -i '(.builtin-topics[] | select(.name)).name |= sub("{{env \"ROS_NAMESPACE\"}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
+    # Use sed to replace '//' with '/'
+    sed -i 's#//#/#g' $CFG_PATH/config.yaml
+
     if ! cmp -s $CFG_PATH/config.yaml $CFG_PATH/config.yaml.tmp; then
         # mv is an atomic operation on POSIX systems (cp is not)
         cp $CFG_PATH/config.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION.yaml.tmp &&

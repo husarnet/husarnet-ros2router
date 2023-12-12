@@ -1,7 +1,11 @@
 # create_filter.sh /chatter /rosout > devel_setup/filter.yaml
 
 allowlist:
-  - name: "rt/chatter"
+  - name: rt/{{env "ROS_NAMESPACE"}}/chatter
+    type: "std_msgs::msg::dds_::String_"
+  - name: rt/{{env "ROS_NAMESPACE"}}/chatter2
+    type: "std_msgs::msg::dds_::String_"
+  - name: rt/chatter3
     type: "std_msgs::msg::dds_::String_"
 blocklist:
   - name: "rt/rosout"
