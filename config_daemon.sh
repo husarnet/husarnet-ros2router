@@ -60,9 +60,9 @@ while true; do
         yq -i '. * load("/filter.yaml")' $CFG_PATH/config.yaml
     fi
 
-    yq -i '(.allowlist[] | select(.name)).name |= sub("{{env \"ROS_NAMESPACE\"}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
-    yq -i '(.blocklist[] | select(.name)).name |= sub("{{env \"ROS_NAMESPACE\"}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
-    yq -i '(.builtin-topics[] | select(.name)).name |= sub("{{env \"ROS_NAMESPACE\"}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
+    yq -i '(.allowlist[] | select(.name)).name |= sub("{{env [\"]*ROS_NAMESPACE[\"]*}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
+    yq -i '(.blocklist[] | select(.name)).name |= sub("{{env [\"]*ROS_NAMESPACE[\"]*}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
+    yq -i '(.builtin-topics[] | select(.name)).name |= sub("{{env [\"]*ROS_NAMESPACE[\"]*}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
     
     # remove comments
     yq -i '... comments=""' $CFG_PATH/config.yaml
