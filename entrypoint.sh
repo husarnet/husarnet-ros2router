@@ -303,7 +303,7 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
     fi
 
     if [ -n "${ROS_DOMAIN_ID}" ]; then
-        yq -i '.participants[].domain |= env(ROS_DOMAIN_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '(.participants[] | select (.domain).domain ) = env(ROS_DOMAIN_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION.yaml
     fi
 
     rm -f $CFG_PATH/config.yaml.tmp

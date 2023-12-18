@@ -22,7 +22,7 @@ services:
       - ../local-participant.yaml:/local-participant.yaml
     environment:
       ROS_DOMAIN_ID: 123
-      ROS_DISCOVERY_SERVER: ";;;;rosbot2r:123;;;;[fc94:5fa1:c323:30bc:a87d:7485:23c4:f5a2]:9876"
+      ROS_DISCOVERY_SERVER: ";;;;rosbot2r:123"
       DISCOVERY_SERVER_LISTENING_PORT: "12345"
       DISCOVERY_SERVER_ID: 1
       ROS_NAMESPACE: robocik
