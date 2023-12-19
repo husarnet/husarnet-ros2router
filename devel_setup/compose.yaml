@@ -19,7 +19,7 @@ services:
       - ../config.discovery-server.template.yaml:/config.discovery-server.template.yaml
       - ../config.lan.template.yaml:/config.lan.template.yaml
       - ../config.wan.template.yaml:/config.wan.template.yaml
-      - ../local-participant.yaml:/local-participant.yaml
+      - ../local-participants.yaml:/local-participants.yaml
     environment:
       ROS_DOMAIN_ID: 123
       ROS_DISCOVERY_SERVER: ";;;;rosbot2r:123;;rosbot2r:874"

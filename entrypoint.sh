@@ -244,7 +244,7 @@ FILTER=$(strip_quotes "$FILTER")
 
 if [[ $AUTO_CONFIG == "TRUE" ]]; then
 
-    cp local-participant.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    cp local-participants.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
     if [[ -n "${LOCAL_PARTICIPANT}" ]]; then
         yq -i '. * env(LOCAL_PARTICIPANT)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml

@@ -55,17 +55,15 @@ COPY config.lan.template.yaml /
 COPY config.discovery-server.template.yaml /
 COPY config.wan.template.yaml /
 COPY filter.yaml /
-COPY local-participant.yaml /
+COPY local-participants.yaml /
 COPY config_daemon.sh /
 COPY superclient.template.xml /
 
 ENV AUTO_CONFIG=TRUE
 ENV USE_HUSARNET=TRUE
 ENV ROS_DISCOVERY_SERVER=
-ENV DISCOVERY_SERVER_ID=0
 ENV DISCOVERY_SERVER_LISTENING_PORT=
-
-# ENV EXIT_IF_HUSARNET_NOT_AVAILABLE=FALSE
+ENV DISCOVERY_SERVER_ID=0
 ENV EXIT_IF_HOST_TABLE_CHANGED=FALSE
 
 ENV ROS_LOCALHOST_ONLY=1
