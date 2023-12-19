@@ -2,11 +2,11 @@ version: v3.0
 
 participants:
 
-  - name: LocalHostParticipant
+  - name: LocalUdpParticipant
     kind: local
     domain: 0
     transport: udp
-  - name: LocalDockerParticipant
+  - name: LocalShmParticipant
     kind: local
     domain: 0
     transport: shm

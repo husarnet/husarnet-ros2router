@@ -22,7 +22,7 @@ services:
       - ../local-participant.yaml:/local-participant.yaml
     environment:
       ROS_DOMAIN_ID: 123
-      ROS_DISCOVERY_SERVER: ";;;;rosbot2r:123"
+      ROS_DISCOVERY_SERVER: ";;;;rosbot2r:123;;rosbot2r:874"
       DISCOVERY_SERVER_LISTENING_PORT: "12345"
       DISCOVERY_SERVER_ID: 1
       ROS_NAMESPACE: robocik
@@ -47,4 +47,4 @@ services:
       # - LOCAL_TRANSPORT=builtin
       # - EXIT_IF_HUSARNET_NOT_AVAILABLE=TRUE
       # - EXIT_IF_HOST_TABLE_CHANGED=TRUE
-    entrypoint: sleep 3600
+    entrypoint: tail -f /dev/null
