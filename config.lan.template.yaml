@@ -1,9 +1,5 @@
-version: v3.0
-
-participants:
-
-  - name: RemoteParticipant
-    kind: local
-    domain: 0
-    transport: udp
-    ignore-participant-flags: filter_different_and_same_process # Discovery traffic from own host is discarded
+- name: LANParticipant
+  kind: local
+  domain: 0
+  transport: udp
+  ignore-participant-flags: filter_different_and_same_process

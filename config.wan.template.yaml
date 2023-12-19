@@ -1,12 +1,8 @@
-version: v3.0
-
-participants:
-
-  - name: RemoteParticipant
-    kind: initial-peers
-    listening-addresses:
-      - ip: 127.0.0.1
-        port: 11811
-    connection-addresses:
-      - ip: 127.0.0.1
-        port: 11811
+- name: HusarnetParticipant
+  kind: initial-peers
+  listening-addresses:
+    - ip: 127.0.0.1
+      port: 11811
+  connection-addresses:
+    - ip: 127.0.0.1
+      port: 11811

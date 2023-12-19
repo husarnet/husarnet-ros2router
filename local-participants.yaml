@@ -1,0 +1,12 @@
+version: v3.0
+
+participants:
+
+  - name: LocalUdpParticipant
+    kind: local
+    domain: 0
+    transport: udp
+  - name: LocalShmParticipant
+    kind: local
+    domain: 0
+    transport: shm

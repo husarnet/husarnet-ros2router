@@ -26,7 +26,8 @@ COPY ddsrouter.repos colcon.meta /dds_router/
 
 RUN vcs import src < ddsrouter.repos && \
     git clone --branch release-1.11.0 https://github.com/google/googletest src/googletest-distribution && \
-    colcon build
+    colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release  && \
+    rm -rf build log src
 
 FROM ubuntu:20.04
 
@@ -54,20 +55,21 @@ COPY config.lan.template.yaml /
 COPY config.discovery-server.template.yaml /
 COPY config.wan.template.yaml /
 COPY filter.yaml /
-COPY local-participant.yaml /
+COPY local-participants.yaml /
 COPY config_daemon.sh /
 COPY superclient.template.xml /
 
 ENV AUTO_CONFIG=TRUE
 ENV USE_HUSARNET=TRUE
 ENV ROS_DISCOVERY_SERVER=
-ENV DISCOVERY_SERVER_ID=0
 ENV DISCOVERY_SERVER_LISTENING_PORT=
-
-ENV EXIT_IF_HUSARNET_NOT_AVAILABLE=FALSE
+ENV DISCOVERY_SERVER_ID=0
 ENV EXIT_IF_HOST_TABLE_CHANGED=FALSE
 
-ENV ROS_LOCALHOST_ONLY=0
+ENV ROS_LOCALHOST_ONLY=1
+ENV ROS_DISTRO=humble
+ENV ROS_DOMAIN_ID=
+ENV ROS_NAMESPACE=
 
 ENV FILTER=
 ENV LOCAL_PARTICIPANT=
