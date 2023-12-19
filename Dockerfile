@@ -26,7 +26,8 @@ COPY ddsrouter.repos colcon.meta /dds_router/
 
 RUN vcs import src < ddsrouter.repos && \
     git clone --branch release-1.11.0 https://github.com/google/googletest src/googletest-distribution && \
-    colcon build
+    colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release  && \
+    rm -rf build log src
 
 FROM ubuntu:20.04
 
