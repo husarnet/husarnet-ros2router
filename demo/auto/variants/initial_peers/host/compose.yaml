@@ -1,0 +1,6 @@
+services:
+
+  ros2router:
+    image: husarnet/ros2router:1.5.0
+    ports: 
+      - 11811:11811
