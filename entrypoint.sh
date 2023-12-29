@@ -327,4 +327,10 @@ fi
 # setup dds router environment
 source "/dds_router/install/setup.bash"
 
-exec "$@"
+if [ -z "$USER" ]; then
+    export USER=root
+elif ! id "$USER" &>/dev/null; then
+    useradd -ms /bin/bash "$USER"
+fi
+
+exec gosu $USER "$@"

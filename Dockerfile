@@ -35,6 +35,7 @@ ARG TARGETARCH
 ARG YQ_VERSION=v4.35.1
 
 RUN apt-get update && apt-get install -y \
+        gosu \
         curl \
         libyaml-cpp-dev \
         iputils-ping \
@@ -74,7 +75,7 @@ ENV ROS_NAMESPACE=
 
 ENV FILTER=
 ENV LOCAL_PARTICIPANT=
-
+ENV USER=root
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "ddsrouter", "-c", "/var/tmp/DDS_ROUTER_CONFIGURATION.yaml" ]
