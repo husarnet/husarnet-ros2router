@@ -2,6 +2,12 @@
 
 CFG_PATH=/var/tmp
 
+if [ -z "$USER" ]; then
+    export USER=root
+elif ! id "$USER" &>/dev/null; then
+    useradd -ms /bin/bash "$USER"
+fi
+
 strip_quotes() {
     local value="$1"
 
@@ -313,9 +319,16 @@ if [[ $AUTO_CONFIG == "TRUE" ]]; then
     # Start a config_daemon
     rm -f $CFG_PATH/config_daemon_logs_pipe
     mkfifo $CFG_PATH/config_daemon_logs_pipe
-    cat <$CFG_PATH/config_daemon_logs_pipe &
+
+    # Use gosu to run the commands as the specified user
+    gosu $USER bash -c "cat <$CFG_PATH/config_daemon_logs_pipe &"
+    # cat <$CFG_PATH/config_daemon_logs_pipe &
+    
     pkill -f config_daemon.sh
-    nohup ./config_daemon.sh >$CFG_PATH/config_daemon_logs_pipe 2>&1 &
+
+    # Starting config_daemon.sh as the specified user and redirecting output to the pipe
+    gosu $USER nohup ./config_daemon.sh >$CFG_PATH/config_daemon_logs_pipe 2>&1 &
+    # nohup ./config_daemon.sh >$CFG_PATH/config_daemon_logs_pipe 2>&1 &
 
     # wait for the semaphore indicating the loop has completed once
     while [ ! -f /tmp/loop_done_semaphore ]; do
@@ -326,12 +339,6 @@ fi
 
 # setup dds router environment
 source "/dds_router/install/setup.bash"
-
-if [ -z "$USER" ]; then
-    export USER=root
-elif ! id "$USER" &>/dev/null; then
-    useradd -ms /bin/bash "$USER"
-fi
 
 if [ $# -eq 0 ]; then
     exec gosu $USER /bin/bash
