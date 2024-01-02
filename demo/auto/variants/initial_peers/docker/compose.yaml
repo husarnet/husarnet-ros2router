@@ -1,39 +1,46 @@
-x-husarnet-net:
-  &husarnet-net
-  network_mode: service:husarnet-talker
-  ipc: service:husarnet-talker
+# x-husarnet-net:
+#   &husarnet-net
+#   network_mode: service:husarnet-talker
+#   ipc: service:husarnet-talker
 
 services:
 
-  husarnet-talker:
-    image: husarnet/husarnet-nightly:2.0.207
-    ipc: shareable
-    networks:
-      - network_talker
-    volumes:
-      - /var/lib/husarnet
-    sysctls:
-      - net.ipv6.conf.all.disable_ipv6=0
-    cap_add:
-      - NET_ADMIN
-    devices:
-      - /dev/net/tun
-    environment:
-      - HOSTNAME=jakistam
-      - JOINCODE=fc94:b01d:1803:8dd8:b293:5c7d:7639:932a/QSYFUoCHsJBf5dnJ8J9d6C
-      - HUSARNET_DEBUG=1
-      # - HUSARNET_DAEMON_API_INTERFACE=eth0
-  # highlight-start
+  # husarnet-talker:
+  #   image: husarnet/husarnet-nightly:2.0.207
+  #   ipc: shareable
+  #   networks:
+  #     - network_talker
+  #   volumes:
+  #     - /var/lib/husarnet
+  #   sysctls:
+  #     - net.ipv6.conf.all.disable_ipv6=0
+  #   cap_add:
+  #     - NET_ADMIN
+  #   devices:
+  #     - /dev/net/tun
+  #   environment:
+  #     - HOSTNAME=jakistam
+  #     - JOINCODE=fc94:b01d:1803:8dd8:b293:5c7d:7639:932a/QSYFUoCHsJBf5dnJ8J9d6C
+  #     - HUSARNET_DEBUG=1
+  #     # - HUSARNET_DAEMON_API_INTERFACE=eth0
+  # # highlight-start
+
   ros2router-talker:
     image: husarnet/ros2router:1.5.0
-    <<: *husarnet-net
+    network_mode: bridge
+    # network_mode: host
+    # <<: *husarnet-net
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
     volumes:
       - ./test/entrypoint.sh:/entrypoint.sh
       - ./test/config_daemon.sh:/config_daemon.sh
-    entrypoint: tail -f /dev/null
+    # entrypoint: tail -f /dev/null
     environment:
       - HUSARNET_PARTICIPANT_ENABLED=TRUE
-      - HUSARNET_API_HOST=127.0.0.1
+      # - HUSARNET_API_HOST=127.0.0.1
+      - HUSARNET_API_HOST=172.17.0.1 # docker0
+      - ROS_LOCALHOST_ONLY=0
     # environment:
     #   - LOCAL_TRANSPORT=builtin
     #   - DISCOVERY_SERVER_LISTENING_PORT=11811
@@ -42,9 +49,12 @@ services:
 
   talker:
     image: husarion/ros2-demo-nodes:humble
-    <<: *husarnet-net
-    command: ros2 run demo_nodes_cpp talker
+    # <<: *husarnet-net
+    # network_mode: service:ros2router-talker
+    # environment:
+    #   - ROS_LOCALHOST_ONLY=1
+    command: ros2 run demo_nodes_cpp $CHATTER_TYPE 
 
-networks:
-  network_talker:
-    driver: bridge
+# networks:
+#   network_talker:
+#     driver: bridge
