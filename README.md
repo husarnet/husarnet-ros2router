@@ -144,6 +144,7 @@ services:
 | `LOCAL_PARTICIPANTS` | | set the non-husarnet, [local participant](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/simple.html#user-manual-participants-simple). It's alternative to providing `/local-participants.yaml` as a volume |
 | `ROS_DOMAIN_ID` | | If set it changes the default `domain: 0` for all participants with `kind: local` (basically all instead of `HusarnetParticipant` working in the Discovery Server config)  |
 | `FILTER` |  |  It's alternative to providing `/filter.yaml` as a volume |
+| `USER` | `root` | Allowing you to run the DDS Router as a different user (useful to enable SHM communication between host and Docker container) |
 
 example for `LOCAL_PARTICIPANTS` env:
 
