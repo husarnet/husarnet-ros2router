@@ -35,6 +35,7 @@ ARG TARGETARCH
 ARG YQ_VERSION=v4.35.1
 
 RUN apt-get update && apt-get install -y \
+        gosu \
         curl \
         libyaml-cpp-dev \
         iputils-ping \
@@ -60,7 +61,8 @@ COPY config_daemon.sh /
 COPY superclient.template.xml /
 
 ENV AUTO_CONFIG=TRUE
-ENV USE_HUSARNET=TRUE
+ENV HUSARNET_PARTICIPANT_ENABLED=TRUE
+ENV HUSARNET_API_HOST=127.0.0.1
 ENV ROS_DISCOVERY_SERVER=
 ENV DISCOVERY_SERVER_LISTENING_PORT=
 ENV DISCOVERY_SERVER_ID=0
@@ -73,6 +75,7 @@ ENV ROS_NAMESPACE=
 
 ENV FILTER=
 ENV LOCAL_PARTICIPANT=
+ENV USER=root
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "ddsrouter", "-c", "/var/tmp/DDS_ROUTER_CONFIGURATION.yaml" ]

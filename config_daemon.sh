@@ -17,7 +17,7 @@ while true; do
     fi
 
     if [[ $husarnet_ready == true ]]; then
-        husarnet_api_response=$(curl -s http://127.0.0.1:16216/api/status)
+        husarnet_api_response=$(curl -s http://$HUSARNET_API_HOST:16216/api/status)
 
         if [[ $? -ne 0 ]]; then
             echo "Failed to connect to Husarnet API endpoint."

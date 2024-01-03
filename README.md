@@ -128,7 +128,8 @@ services:
 | env | default value | description |
 | - | - | - |
 | `AUTO_CONFIG` | `TRUE` | If set to `TRUE`, the `DDS_ROUTER_CONFIGURATION.yaml` will be automatically generated using all other environment variables. Set to `FALSE` to use a custom DDS Router configuration, **bypassing all other environment variables** |
-| `USE_HUSARNET` | `TRUE` | When set to `TRUE`, the `HusarnetParticipant` is created int the DDS Router configuration file. If `FALSE` |
+| `HUSARNET_PARTICIPANT_ENABLED` | `TRUE` | When set to `TRUE`, the `HusarnetParticipant` is created int the DDS Router configuration file. If `FALSE` |
+| `HUSARNET_API_HOST` | `127.0.0.1` | The IPv4 address where Husarnet Daemon is running (If using a different address than `127.0.0.1` remember also to run the Husarnet Daemon with a `HUSARNET_DAEMON_API_INTERFACE` env setup ) |
 | `ROS_DISCOVERY_SERVER` | | If set the `HusarnetParticipant` will work in the [Disocovery Server setup](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/local_discovery_server.html#user-manual-participants-local-discovery-server) as a `Client`. Set it to one of the following formats: `<husarnet-ipv6-addr>:<discovery-server-port>` or `<husarnet-hostname>:<discovery-server-port>` to connect as the Client to the device acting as a Discovery Server. To specify multiple addresses, use semicolons as separators. The server's ID is determined by its position in the list (starting from `0`). If there's an empty space between semicolons, it indicates that the respective ID is available. Eg. `ROS_DISCOVERY_SERVER=";;abc:123;;;def:456"` means that the ID of `abc:123` is `2` and ID of `def` is `5`|
 | `DISCOVERY_SERVER_LISTENING_PORT` |  | If set the `HusarnetParticipant` will work in the [Disocovery Server setup](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/local_discovery_server.html#user-manual-participants-local-discovery-server) as a `Server`. Set it to a number between `0` to `65535`. Can be used together with `ROS_DISCOVERY_SERVER` allowing `HusarnetParticipant` to work both as a `Client` and a `Server` |
 | `DISCOVERY_SERVER_ID` | `0` | The ID of the local Discovery Server |
@@ -143,6 +144,7 @@ services:
 | `LOCAL_PARTICIPANTS` | | set the non-husarnet, [local participant](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/simple.html#user-manual-participants-simple). It's alternative to providing `/local-participants.yaml` as a volume |
 | `ROS_DOMAIN_ID` | | If set it changes the default `domain: 0` for all participants with `kind: local` (basically all instead of `HusarnetParticipant` working in the Discovery Server config)  |
 | `FILTER` |  |  It's alternative to providing `/filter.yaml` as a volume |
+| `USER` | `root` | Allowing you to run the DDS Router as a different user (useful to enable SHM communication between host and Docker container) |
 
 example for `LOCAL_PARTICIPANTS` env:
 
