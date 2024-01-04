@@ -5,6 +5,18 @@
 
 CFG_PATH=/var/tmp
 
+envsubst_custom() {
+    local content=$(<"$1")
+    echo "$content" | while IFS= read -r line; do
+        if [[ $line =~ \{\{env\ [\"]*([^\"]+)[\"]*\}\} ]]; then
+            var="${BASH_REMATCH[1]}"
+            value=$(eval echo "\$$var")
+            line=$(echo "$line" | sed "s/{{env [\"]*$var[\"]*}}/$value/g")
+        fi
+        echo "$line"
+    done
+}
+
 while true; do
     if [ -f $CFG_PATH/config.yaml ]; then
         # config.yaml exists
@@ -53,17 +65,26 @@ while true; do
             fi
         fi
     fi
-    
+
+    # if [[ -n "${FILTER}" ]]; then
+    #     yq -i '. * env(FILTER)' $CFG_PATH/config.yaml
+    # else
+    #     yq -i '. * load("/filter.yaml")' $CFG_PATH/config.yaml
+    # fi
+
+    # yq -i '(.allowlist[] | select(.name)).name |= sub("{{env [\"]*ROS_NAMESPACE[\"]*}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
+    # yq -i '(.blocklist[] | select(.name)).name |= sub("{{env [\"]*ROS_NAMESPACE[\"]*}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
+    # yq -i '(.builtin-topics[] | select(.name)).name |= sub("{{env [\"]*ROS_NAMESPACE[\"]*}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
+
     if [[ -n "${FILTER}" ]]; then
-        yq -i '. * env(FILTER)' $CFG_PATH/config.yaml
+        echo "$FILTER" >$CFG_PATH/filter.tmp.yaml
     else
-        yq -i '. * load("/filter.yaml")' $CFG_PATH/config.yaml
+        cp /filter.yaml $CFG_PATH/filter.tmp.yaml
     fi
 
-    yq -i '(.allowlist[] | select(.name)).name |= sub("{{env [\"]*ROS_NAMESPACE[\"]*}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
-    yq -i '(.blocklist[] | select(.name)).name |= sub("{{env [\"]*ROS_NAMESPACE[\"]*}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
-    yq -i '(.builtin-topics[] | select(.name)).name |= sub("{{env [\"]*ROS_NAMESPACE[\"]*}}";"'$ROS_NAMESPACE'")' $CFG_PATH/config.yaml
-    
+    envsubst_custom $CFG_PATH/filter.tmp.yaml >$CFG_PATH/filter.yaml
+    yq -i '. * load("'$CFG_PATH'/filter.yaml")' $CFG_PATH/config.yaml
+
     # remove comments
     yq -i '... comments=""' $CFG_PATH/config.yaml
 

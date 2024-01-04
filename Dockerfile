@@ -52,6 +52,7 @@ RUN curl -L https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_l
 COPY --from=ddsrouter_builder /dds_router /dds_router
 
 COPY entrypoint.sh /
+COPY run_auto_config.sh /
 COPY config.lan.template.yaml /
 COPY config.discovery-server.template.yaml /
 COPY config.wan.template.yaml /
