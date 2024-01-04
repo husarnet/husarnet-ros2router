@@ -3,11 +3,11 @@
 allowlist:
   - name: rt/robocik/chatter
     type: "std_msgs::msg::dds_::String_"
-  - name: "rt/{{env ROS_NAMESPACE}}/chatter2"
+  - name: "rt/{{env RANDOM_ENV}}/chatter2"
     type: "std_msgs::msg::dds_::String_"
-  - name: rt/chatter3
+  - name: rt/{{env "RANDOM_ENV1"}}/chatter3
     type: "std_msgs::msg::dds_::String_"
 blocklist:
-  - name: "rt/rosout"
+  - name: "rt/{{env RANDOM_ENV1}}/rosout"
     type: "rcl_interfaces::msg::dds_::Log_"
 builtin-topics: []

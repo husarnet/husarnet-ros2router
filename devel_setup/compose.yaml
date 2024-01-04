@@ -14,6 +14,7 @@ services:
     volumes:
       - ../config_daemon.sh:/config_daemon.sh
       - ../entrypoint.sh:/entrypoint.sh
+      - ../run_auto_config.sh:/run_auto_config.sh
       - ./filter.yaml:/filter.yaml
       - ./test2.sh:/test2.sh
       - ../config.discovery-server.template.yaml:/config.discovery-server.template.yaml
@@ -21,7 +22,9 @@ services:
       - ../config.wan.template.yaml:/config.wan.template.yaml
       - ../local-participants.yaml:/local-participants.yaml
     environment:
+      USER: $USER
       ROS_DOMAIN_ID: 123
+      RANDOM_ENV: abcde
       ROS_DISCOVERY_SERVER: ";;;;rosbot2r:123;;rosbot2r:874"
       DISCOVERY_SERVER_LISTENING_PORT: "12345"
       DISCOVERY_SERVER_ID: 1
