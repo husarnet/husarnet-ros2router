@@ -8,11 +8,11 @@ CFG_PATH=/var/tmp
 envsubst_custom() {
     local content=$(<"$1")
     echo "$content" | while IFS= read -r line; do
-        if [[ $line =~ \{\{env\ [\"]*([^\"]+)[\"]*\}\} ]]; then
+        while [[ $line =~ \{\{env\ [\"]*([^\"{}]+)[\"]*\s*\}\} ]]; do
             var="${BASH_REMATCH[1]}"
             value=$(eval echo "\$$var")
-            line=$(echo "$line" | sed "s/{{env [\"]*$var[\"]*}}/$value/g")
-        fi
+            line=$(echo "$line" | sed "s/{{env\s*[\"]*$var[\"]*\s*}}/$value/g")
+        done
         echo "$line"
     done
 }
