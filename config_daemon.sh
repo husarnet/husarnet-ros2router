@@ -84,10 +84,10 @@ while true; do
         cat "$CFG_PATH/filter.tmp.yaml" | gomplate >"$CFG_PATH/filter.yaml"
     fi
 
-    yq -i '. * load("'"$CFG_PATH"'/filter.yaml")' "$CFG_PATH/config.yaml"
-
     # Store the current hash for next comparison
     echo "$current_hash" >"$HASH_FILE"
+
+    yq -i '. * load("'"$CFG_PATH"'/filter.yaml")' "$CFG_PATH/config.yaml"
 
     # remove comments
     yq -i '... comments=""' $CFG_PATH/config.yaml
