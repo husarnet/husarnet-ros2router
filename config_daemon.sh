@@ -5,18 +5,6 @@
 
 CFG_PATH=/var/tmp
 
-envsubst_custom() {
-    local content=$(<"$1")
-    echo "$content" | while IFS= read -r line; do
-        while [[ $line =~ \{\{env\ [\"]*([^\"{}]+)[\"]*\s*\}\} ]]; do
-            var="${BASH_REMATCH[1]}"
-            value=$(eval echo "\$$var")
-            line=$(echo "$line" | sed "s/{{env\s*[\"]*$var[\"]*\s*}}/$value/g")
-        done
-        echo "$line"
-    done
-}
-
 while true; do
     if [ -f $CFG_PATH/config.yaml ]; then
         # config.yaml exists
@@ -82,7 +70,7 @@ while true; do
         cp /filter.yaml $CFG_PATH/filter.tmp.yaml
     fi
 
-    envsubst_custom $CFG_PATH/filter.tmp.yaml >$CFG_PATH/filter.yaml
+    cat $CFG_PATH/filter.tmp.yaml | gomplate >$CFG_PATH/filter.yaml
     yq -i '. * load("'$CFG_PATH'/filter.yaml")' $CFG_PATH/config.yaml
 
     # remove comments
