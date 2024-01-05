@@ -49,7 +49,7 @@ RUN apt-get update && apt-get install -y \
 RUN curl -L https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${TARGETARCH} -o /usr/bin/yq && \
     chmod +x /usr/bin/yq
 
-RUN curl -L https://github.com/hairyhenderson/gomplate/releases/download/${GOMPLATE_VERSION}/gomplate_linux-${TARGETARCH}-slim -o /usr/bin/gomplate && \
+RUN curl -L https://github.com/hairyhenderson/gomplate/releases/download/${GOMPLATE_VERSION}/gomplate_linux-${TARGETARCH} -o /usr/bin/gomplate && \
     chmod +x /usr/bin/gomplate
 
 # COPY --from=ddsrouter_builder /dds_router/install /dds_router/install
