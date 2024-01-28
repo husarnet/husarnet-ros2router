@@ -1,4 +1,5 @@
-FROM ubuntu:20.04 AS ddsrouter_builder
+FROM ubuntu:22.04 AS ddsrouter_builder
+# FROM ros:iron-ros-core AS ddsrouter_builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -25,11 +26,12 @@ WORKDIR /dds_router
 COPY ddsrouter.repos colcon.meta /dds_router/
 
 RUN vcs import src < ddsrouter.repos && \
-    git clone --branch release-1.11.0 https://github.com/google/googletest src/googletest-distribution && \
+    # git clone --branch release-1.11.0 https://github.com/google/googletest src/googletest-distribution && \
     colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release  && \
     rm -rf build log src
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04
+# FROM ros:iron-ros-core
 
 ARG TARGETARCH
 ARG YQ_VERSION=v4.35.1
@@ -40,8 +42,8 @@ RUN apt-get update && apt-get install -y \
         curl \
         libyaml-cpp-dev \
         iputils-ping \
-        python3.8 \
-        libtinyxml2-6 \
+# python3.8
+        libtinyxml2-dev \
         python3 && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
