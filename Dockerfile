@@ -1,4 +1,4 @@
-FROM ubuntu:20.04 AS ddsrouter_builder
+FROM ubuntu:22.04 AS ddsrouter_builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -25,11 +25,10 @@ WORKDIR /dds_router
 COPY ddsrouter.repos colcon.meta /dds_router/
 
 RUN vcs import src < ddsrouter.repos && \
-    git clone --branch release-1.11.0 https://github.com/google/googletest src/googletest-distribution && \
     colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release  && \
     rm -rf build log src
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ARG TARGETARCH
 ARG YQ_VERSION=v4.35.1
@@ -40,8 +39,7 @@ RUN apt-get update && apt-get install -y \
         curl \
         libyaml-cpp-dev \
         iputils-ping \
-        python3.8 \
-        libtinyxml2-6 \
+        libtinyxml2-dev \
         python3 && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
@@ -52,7 +50,6 @@ RUN curl -L https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_l
 RUN curl -L https://github.com/hairyhenderson/gomplate/releases/download/${GOMPLATE_VERSION}/gomplate_linux-${TARGETARCH} -o /usr/bin/gomplate && \
     chmod +x /usr/bin/gomplate
 
-# COPY --from=ddsrouter_builder /dds_router/install /dds_router/install
 COPY --from=ddsrouter_builder /dds_router /dds_router
 
 COPY entrypoint.sh /
