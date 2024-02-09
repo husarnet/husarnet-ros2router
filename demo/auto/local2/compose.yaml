@@ -1,0 +1,52 @@
+services:
+
+  ros2router:
+    image: husarnet/ros2router:1.7.0
+    network_mode: host
+    ipc: host
+    volumes:
+      - ./ddsrouter.yaml:/ddsrouter.yaml
+    environment:
+      - HUSARNET_PARTICIPANT_ENABLED=FALSE
+      # - ROS_DISTRO=iron
+      - USER
+    # command: tail -f /dev/null
+    command: ddsrouter -c /ddsrouter.yaml
+
+  talker:
+    build:
+      context: .
+      args:
+        - ROS_DISTRO=humble
+    network_mode: host
+    ipc: host
+    volumes:
+      - ./shm-only.xml:/shm-only.xml
+    environment:
+      - FASTRTPS_DEFAULT_PROFILES_FILE=/shm-only.xml
+      - USER
+    command: ros2 run demo_nodes_cpp talker
+
+  listener-humble:
+    build:
+      context: .
+      args:
+        - ROS_DISTRO=humble
+    network_mode: host
+    ipc: host
+    environment:
+      - ROS_LOCALHOST_ONLY=1
+      - USER
+    command: ros2 run demo_nodes_cpp listener
+
+  listener-iron:
+    build:
+      context: .
+      args:
+        - ROS_DISTRO=iron
+    network_mode: host
+    ipc: host
+    environment:
+      - ROS_LOCALHOST_ONLY=1
+      - USER
+    command: ros2 run demo_nodes_cpp listener
