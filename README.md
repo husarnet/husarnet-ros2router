@@ -140,7 +140,6 @@ services:
 | env | default value | description |
 | - | - | - |
 | `ROS_LOCALHOST_ONLY` | `1` | If set to `0` the `LANParticipant` is enabled that is used for connecting with other ROS 2 nodes in a LAN network with a default simple DDS discovery (without using Husarnet) |
-| `ROS_DISTRO` | `humble` | This env is used by a `LocalUdpParticipant` to determine the right config for listening to discovery traffic from ROS 2 nodes launched on the localhost with `ROS_LOCALHOST_ONLY=1` env |
 | `LOCAL_PARTICIPANTS` | | set the non-husarnet, [local participant](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/simple.html#user-manual-participants-simple). It's alternative to providing `/local-participants.yaml` as a volume |
 | `ROS_DOMAIN_ID` | | If set it changes the default `domain: 0` for all participants with `kind: local` (basically all instead of `HusarnetParticipant` working in the Discovery Server config)  |
 | `FILTER` |  |  It's alternative to providing `/filter.yaml` as a volume |

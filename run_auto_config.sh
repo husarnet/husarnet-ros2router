@@ -290,14 +290,6 @@ run_auto_config() {
 
     fi
 
-    if [[ "$ROS_DISTRO" == "iron" ]]; then
-        yq -i '(.participants[] | select(.name == "LocalUdpParticipant").ignore-participant-flags) = "filter_different_host"' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-        yq -i '(.participants[] | select(.name == "LocalUdpParticipant").whitelist-interfaces) = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-    else
-        yq -i '(.participants[] | select(.name == "LocalUdpParticipant").ignore-participant-flags) = "no_filter"' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-        yq -i '(.participants[] | select(.name == "LocalUdpParticipant").whitelist-interfaces) = [ "127.0.0.1" ]' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-    fi
-
     if [[ $ROS_LOCALHOST_ONLY == "0" ]]; then
         yq -i '.participants += load("/config.lan.template.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     fi
