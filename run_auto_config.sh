@@ -24,7 +24,7 @@ create_config_husarnet() {
     if [[ -z "$DISCOVERY_SERVER_LISTENING_PORT" && -z "$ROS_DISCOVERY_SERVER" ]]; then
         echo "Launching Initial Peers config"
 
-        yq -i '.participants += load("/config.wan.template.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants += load("/participant.husarnet.wan.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
         yq -i '(.participants[] | select(.name == "HusarnetParticipant").listening-addresses[0].ip) = strenv(LOCAL_IP)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
@@ -32,7 +32,7 @@ create_config_husarnet() {
     else
         echo "Launching ROS Discovery Server config"
 
-        yq -i '.participants += load("/config.discovery-server.template.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        yq -i '.participants += load("/participant.husarnet.ds.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         # Set the local Discovery Server ID to the first element of the ID variable
         echo "Local Server ID: $DISCOVERY_SERVER_ID"
@@ -243,14 +243,63 @@ DISCOVERY_SERVER_LISTENING_PORT=$(strip_quotes "$DISCOVERY_SERVER_LISTENING_PORT
 FILTER=$(strip_quotes "$FILTER")
 
 run_auto_config() {
-    cp local-participants.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    cp config.base.yaml $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
-    if [[ -n "${LOCAL_PARTICIPANT}" ]]; then
-        yq -i '. * env(LOCAL_PARTICIPANT)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    if [[ -n "${CONFIG_BASE}" ]]; then
+        yq -i '. * env(CONFIG_BASE)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     fi
 
+    # Verify that PARTICIPANTS is set and not empty
+    if [ -z "$PARTICIPANTS" ]; then
+        echo "Error: PARTICIPANTS environment variable is not set."
+        exit 1
+    fi
+
+    # Regex to verify the format
+    if [[ $PARTICIPANTS =~ ^([a-z]+,?)*$ ]]; then
+        echo "PARTICIPANTS env format is correct."
+    else
+        echo "Error: PARTICIPANTS env format is incorrect."
+        exit 1
+    fi
+
+    # Initialize all participant variables to false
+    PARTICIPANT_HUSARNET_ENABLED=false
+    PARTICIPANT_UDP_ENABLED=false
+    PARTICIPANT_SHM_ENABLED=false
+    PARTICIPANT_LAN_ENABLED=false
+
+    # Function to enable a participant
+    enable_participant() {
+        case $1 in
+        husarnet)
+            PARTICIPANT_HUSARNET_ENABLED=true
+            ;;
+        udp)
+            PARTICIPANT_UDP_ENABLED=true
+            ;;
+        shm)
+            PARTICIPANT_SHM_ENABLED=true
+            ;;
+        lan)
+            PARTICIPANT_LAN_ENABLED=true
+            ;;
+        *)
+            # Ignore any other values
+            ;;
+        esac
+    }
+
+    # Enable participants based on the PARTICIPANTS variable
+    IFS=',' read -ra ADDR <<<"$PARTICIPANTS"
+    for i in "${ADDR[@]}"; do
+        enable_participant "$i"
+    done
+
+    # -----------
+
     # Check the value of HUSARNET_PARTICIPANT_ENABLED
-    if [[ $HUSARNET_PARTICIPANT_ENABLED == "FALSE" || $HUSARNET_PARTICIPANT_ENABLED == false || $HUSARNET_PARTICIPANT_ENABLED == 0 ]]; then
+    if [[ $PARTICIPANT_HUSARNET_ENABLED == false ]]; then
         # echo "Using LAN setup."
         echo "Don't using Husarnet participants."
         export husarnet_ready=false
@@ -290,8 +339,16 @@ run_auto_config() {
 
     fi
 
-    if [[ $ROS_LOCALHOST_ONLY == "0" ]]; then
-        yq -i '.participants += load("/config.lan.template.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    if [[ $PARTICIPANT_UDP_ENABLED == true ]]; then
+        yq -i '.participants += load("/participant.udp.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    fi
+
+    if [[ $PARTICIPANT_SHM_ENABLED == true ]]; then
+        yq -i '.participants += load("/participant.shm.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    fi
+
+    if [[ $PARTICIPANT_LAN_ENABLED == true ]]; then
+        yq -i '.participants += load("/participant.lan.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     fi
 
     if [ -n "${ROS_DOMAIN_ID}" ]; then
@@ -306,7 +363,7 @@ run_auto_config() {
     mkfifo $CFG_PATH/config_daemon_logs_pipe
 
     cat <$CFG_PATH/config_daemon_logs_pipe &
-    
+
     pkill -f config_daemon.sh
 
     # Starting config_daemon.sh as the specified user and redirecting output to the pipe

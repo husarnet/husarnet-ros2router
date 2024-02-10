@@ -1,0 +1,4 @@
+version: v4.0
+specs:
+  discovery-trigger: writer
+participants: []
