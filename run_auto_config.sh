@@ -256,9 +256,7 @@ run_auto_config() {
     fi
 
     # Regex to verify the format
-    if [[ $PARTICIPANTS =~ ^([a-z]+,?)*$ ]]; then
-        echo "PARTICIPANTS env format is correct."
-    else
+    if ! [[ $PARTICIPANTS =~ ^([a-z]+,?)*$ ]]; then
         echo "Error: PARTICIPANTS env format is incorrect."
         exit 1
     fi
@@ -295,8 +293,6 @@ run_auto_config() {
     for i in "${ADDR[@]}"; do
         enable_participant "$i"
     done
-
-    # -----------
 
     # Check the value of HUSARNET_PARTICIPANT_ENABLED
     if [[ $PARTICIPANT_HUSARNET_ENABLED == false ]]; then
