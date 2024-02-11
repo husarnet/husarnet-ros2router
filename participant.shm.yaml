@@ -1,0 +1,4 @@
+- name: LocalShmParticipant
+  kind: local
+  domain: 0
+  transport: shm

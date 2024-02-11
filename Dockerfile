@@ -54,29 +54,31 @@ COPY --from=ddsrouter_builder /dds_router /dds_router
 
 COPY entrypoint.sh /
 COPY run_auto_config.sh /
-COPY config.lan.template.yaml /
-COPY config.discovery-server.template.yaml /
-COPY config.wan.template.yaml /
+
+COPY participant.husarnet.ds.yaml /
+COPY participant.husarnet.wan.yaml /
+COPY participant.lan.yaml /
+COPY participant.shm.yaml /
+COPY participant.udp.yaml /
+
 COPY filter.yaml /
-COPY local-participants.yaml /
+COPY config.base.yaml /
 COPY config_daemon.sh /
 COPY superclient.template.xml /
 
 ENV AUTO_CONFIG=TRUE
-ENV HUSARNET_PARTICIPANT_ENABLED=TRUE
+ENV PARTICIPANTS=husarnet,shm,udp
 ENV HUSARNET_API_HOST=127.0.0.1
 ENV ROS_DISCOVERY_SERVER=
 ENV DISCOVERY_SERVER_LISTENING_PORT=
 ENV DISCOVERY_SERVER_ID=0
 ENV EXIT_IF_HOST_TABLE_CHANGED=FALSE
 
-ENV ROS_LOCALHOST_ONLY=1
-ENV ROS_DISTRO=humble
 ENV ROS_DOMAIN_ID=
 ENV ROS_NAMESPACE=
 
 ENV FILTER=
-ENV LOCAL_PARTICIPANT=
+ENV CONFIG_BASE=
 ENV USER=root
 
 ENTRYPOINT [ "/entrypoint.sh" ]

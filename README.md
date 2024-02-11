@@ -73,7 +73,7 @@ The all-in-one example, that should be fine in most cases (both with ROS 2 nodes
 ```yaml
 services:
   ros2router:
-    image: husarnet/ros2router:1.4.0
+    image: husarnet/ros2router:1.8.0
     network_mode: host
     ipc: shareable
     volumes:
@@ -81,18 +81,18 @@ services:
     environment:
       - DISCOVERY_SERVER_ID=2
       - DISCOVERY_SERVER_LISTENING_PORT=8888
-      - ROS_LOCALHOST_ONLY=1
-      - ROS_DISTRO
+      - PARTICIPANTS=husarnet,shm
       - |
-        LOCAL_PARTICIPANT=
-          - name: LocalParticipant
-            kind: local
-            domain: 0
-            transport: udp
-          - name: LocalDockerParticipant
-            kind: local
-            domain: 123
-            transport: shm
+        CONFIG_BASE=
+          version: v4.0
+          specs:
+            discovery-trigger: writer
+          participants:
+            - name: LocalParticipant
+              kind: local
+              domain: 0
+              transport: builtin
+      - ROS_DOMAIN_ID=123
 
   talker:
     image: husarion/ros2-demo-nodes:humble
@@ -128,41 +128,17 @@ services:
 | env | default value | description |
 | - | - | - |
 | `AUTO_CONFIG` | `TRUE` | If set to `TRUE`, the `DDS_ROUTER_CONFIGURATION.yaml` will be automatically generated using all other environment variables. Set to `FALSE` to use a custom DDS Router configuration, **bypassing all other environment variables** |
-| `HUSARNET_PARTICIPANT_ENABLED` | `TRUE` | When set to `TRUE`, the `HusarnetParticipant` is created int the DDS Router configuration file. If `FALSE` |
+| `PARTICIPANTS` | `husarnet,shm,udp` | The coma separated list of paticipants in the ROS 2 Router configuration. Possible values are: `husarnet`, `shm`, `udp`, `lan` |
 | `HUSARNET_API_HOST` | `127.0.0.1` | The IPv4 address where Husarnet Daemon is running (If using a different address than `127.0.0.1` remember also to run the Husarnet Daemon with a `HUSARNET_DAEMON_API_INTERFACE` env setup ) |
 | `ROS_DISCOVERY_SERVER` | | If set the `HusarnetParticipant` will work in the [Disocovery Server setup](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/local_discovery_server.html#user-manual-participants-local-discovery-server) as a `Client`. Set it to one of the following formats: `<husarnet-ipv6-addr>:<discovery-server-port>` or `<husarnet-hostname>:<discovery-server-port>` to connect as the Client to the device acting as a Discovery Server. To specify multiple addresses, use semicolons as separators. The server's ID is determined by its position in the list (starting from `0`). If there's an empty space between semicolons, it indicates that the respective ID is available. Eg. `ROS_DISCOVERY_SERVER=";;abc:123;;;def:456"` means that the ID of `abc:123` is `2` and ID of `def` is `5`|
 | `DISCOVERY_SERVER_LISTENING_PORT` |  | If set the `HusarnetParticipant` will work in the [Disocovery Server setup](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/local_discovery_server.html#user-manual-participants-local-discovery-server) as a `Server`. Set it to a number between `0` to `65535`. Can be used together with `ROS_DISCOVERY_SERVER` allowing `HusarnetParticipant` to work both as a `Client` and a `Server` |
 | `DISCOVERY_SERVER_ID` | `0` | The ID of the local Discovery Server |
 | `EXIT_IF_HOST_TABLE_CHANGED` | `FALSE` | Valid only if `DISCOVERY_SERVER_LISTENING_PORT` and `ROS_DISCOVERY_SERVER` envs are unset and thus starting the **Initial Peers** config. This env is useful in connection with `restart: always` Docker policy - it restarts the DDS Router with a new Initial Peers list applied (the Initial Peers list is not updated by the DDS Router in runtime)  |
-
-### Localhost related
-
-| env | default value | description |
-| - | - | - |
-| `ROS_LOCALHOST_ONLY` | `1` | If set to `0` the `LANParticipant` is enabled that is used for connecting with other ROS 2 nodes in a LAN network with a default simple DDS discovery (without using Husarnet) |
-| `ROS_DISTRO` | `humble` | This env is used by a `LocalUdpParticipant` to determine the right config for listening to discovery traffic from ROS 2 nodes launched on the localhost with `ROS_LOCALHOST_ONLY=1` env |
-| `LOCAL_PARTICIPANTS` | | set the non-husarnet, [local participant](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/simple.html#user-manual-participants-simple). It's alternative to providing `/local-participants.yaml` as a volume |
+| `CONFIG_BASE` | | providing some optional, extra config to the ROS 2 Router |
 | `ROS_DOMAIN_ID` | | If set it changes the default `domain: 0` for all participants with `kind: local` (basically all instead of `HusarnetParticipant` working in the Discovery Server config)  |
 | `FILTER` |  |  It's alternative to providing `/filter.yaml` as a volume |
 | `USER` | `root` | Allowing you to run the DDS Router as a different user (useful to enable SHM communication between host and Docker container) |
 
-example for `LOCAL_PARTICIPANTS` env:
-
-```yaml
-services:
-
-  ros2router:
-    image: husarnet/husarnet-ros2router:1.4.0
-    network_mode: host
-    environment:
-      LOCAL_PARTICIPANTS: |
-        - name: SimpleParticipantLocal
-          kind: local
-          domain: 123
-          transport: udp
-      ROS_LOCALHOST_ONLY: 1 # adds localhost only setup for LOCAL_PARTICIPANT
-      ROS_DISTRO: iron
-```
 
 ## Topic Filtering
 

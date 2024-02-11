@@ -1,0 +1,13 @@
+- name: LocalUdpParticipant 
+  kind: local
+  domain: 0
+  transport: udp
+  ignore-participant-flags: filter_same_process
+  whitelist-interfaces:
+    - 127.0.0.1
+- name: LocalUdpSameHostParticipant
+  kind: local
+  domain: 0
+  transport: udp
+  ignore-participant-flags: filter_different_host
+
