@@ -40,7 +40,8 @@ RUN apt-get update && apt-get install -y \
         libyaml-cpp-dev \
         iputils-ping \
         libtinyxml2-dev \
-        python3 && \
+        python3 \
+        iproute2 && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
@@ -59,7 +60,8 @@ COPY participant.husarnet.ds.yaml /
 COPY participant.husarnet.wan.yaml /
 COPY participant.lan.yaml /
 COPY participant.shm.yaml /
-COPY participant.udp.yaml /
+COPY participant.lo.yaml /
+COPY participant.if.yaml /
 COPY participant.echo.yaml /
 
 COPY filter.yaml /
@@ -68,7 +70,7 @@ COPY config_daemon.sh /
 COPY superclient.template.xml /
 
 ENV AUTO_CONFIG=TRUE
-ENV PARTICIPANTS=husarnet,shm,udp
+ENV PARTICIPANTS=husarnet,shm,lo
 ENV HUSARNET_API_HOST=127.0.0.1
 ENV ROS_DISCOVERY_SERVER=
 ENV DISCOVERY_SERVER_ID=-1

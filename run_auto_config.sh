@@ -217,18 +217,25 @@ run_auto_config() {
         exit 1
     fi
 
+    # # Regex to verify the format
+    # if ! [[ $PARTICIPANTS =~ ^([a-z]+,?)*$ ]]; then
+    #     echo "Error: PARTICIPANTS env format is incorrect."
+    #     exit 1
+    # fi
+
     # Regex to verify the format
-    if ! [[ $PARTICIPANTS =~ ^([a-z]+,?)*$ ]]; then
+    if ! [[ $PARTICIPANTS =~ ^([a-z]+(-[a-zA-Z0-9*]+)?,?)+$ ]]; then
         echo "Error: PARTICIPANTS env format is incorrect."
         exit 1
     fi
 
     # Initialize all participant variables to false
     PARTICIPANT_HUSARNET_ENABLED=false
-    PARTICIPANT_UDP_ENABLED=false
+    PARTICIPANT_LO_ENABLED=false
     PARTICIPANT_SHM_ENABLED=false
     PARTICIPANT_LAN_ENABLED=false
     PARTICIPANT_ECHO_ENABLED=false
+    PARTICIPANT_IF_LIST=()
 
     # Function to enable a participant
     enable_participant() {
@@ -236,8 +243,8 @@ run_auto_config() {
         husarnet)
             PARTICIPANT_HUSARNET_ENABLED=true
             ;;
-        udp)
-            PARTICIPANT_UDP_ENABLED=true
+        lo)
+            PARTICIPANT_LO_ENABLED=true
             ;;
         shm)
             PARTICIPANT_SHM_ENABLED=true
@@ -247,6 +254,21 @@ run_auto_config() {
             ;;
         echo)
             PARTICIPANT_ECHO_ENABLED=true
+            ;;
+        if-*)
+            interface_pattern=${1#if-}
+            if [[ $interface_pattern == *"*"* ]]; then
+                # Handle wildcard interface patterns
+                for intf in /sys/class/net/${interface_pattern#*/}; do
+                    intf=${intf#/sys/class/net/}
+                    if [[ -d "/sys/class/net/$intf" ]]; then
+                        PARTICIPANT_IF_LIST+=("$intf")
+                    fi
+                done
+            else
+                # Handle specific interface name
+                PARTICIPANT_IF_LIST+=("$interface_pattern")
+            fi
             ;;
         *)
             # Ignore any other values
@@ -266,6 +288,7 @@ run_auto_config() {
         echo "Don't using Husarnet participants."
         export husarnet_ready=false
     else
+        echo ">> Husarnet participant enabled"
         echo "Checking if Husarnet API (http://$HUSARNET_API_HOST:16216) is ready "
         for i in {1..7}; do
             husarnet_api_response=$(curl -s http://$HUSARNET_API_HOST:16216/api/status)
@@ -301,20 +324,41 @@ run_auto_config() {
 
     fi
 
-    if [[ $PARTICIPANT_UDP_ENABLED == true ]]; then
-        yq -i '.participants += load("/participant.udp.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    if [[ $PARTICIPANT_LO_ENABLED == true ]]; then
+        echo ">> lo participant enabled"
+        yq -i '.participants += load("/participant.lo.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     fi
 
     if [[ $PARTICIPANT_SHM_ENABLED == true ]]; then
+        echo ">> SHM participant enabled"
         yq -i '.participants += load("/participant.shm.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     fi
 
     if [[ $PARTICIPANT_LAN_ENABLED == true ]]; then
+        echo ">> LAN participant enabled"
         yq -i '.participants += load("/participant.lan.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     fi
 
     if [[ $PARTICIPANT_ECHO_ENABLED == true ]]; then
+        echo ">> ECHO participant enabled"
         yq -i '.participants += load("/participant.echo.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    fi
+
+    if [[ ${#PARTICIPANT_IF_LIST[@]} -gt 0 ]]; then
+        echo ">> IF participants enabled"
+        yq -i '.participants += load("/participant.if.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        for interface in "${PARTICIPANT_IF_LIST[@]}"; do
+
+            # Get the IP address associated with the network interface
+            export local_ip=$(ip addr show $interface | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
+
+            if [ ! -z "$local_ip" ]; then
+                echo "$interface: $local_ip"
+                yq -i '(.participants[] | select(.name == "IfParticipant").whitelist-interfaces) += strenv(local_ip)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+            else
+                echo "$interface: no IP address assigned"
+            fi
+        done
     fi
 
     if [ -n "${ROS_DOMAIN_ID}" ]; then
