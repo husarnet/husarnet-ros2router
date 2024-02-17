@@ -69,7 +69,6 @@ COPY config.base.yaml /
 COPY config_daemon.sh /
 COPY superclient.template.xml /
 
-ENV AUTO_CONFIG=TRUE
 ENV PARTICIPANTS=husarnet,shm,lo
 ENV HUSARNET_API_HOST=127.0.0.1
 ENV ROS_DISCOVERY_SERVER=

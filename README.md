@@ -127,16 +127,15 @@ services:
 
 | env | default value | description |
 | - | - | - |
-| `AUTO_CONFIG` | `TRUE` | If set to `TRUE`, the `DDS_ROUTER_CONFIGURATION.yaml` will be automatically generated using all other environment variables. Set to `FALSE` to use a custom DDS Router configuration, **bypassing all other environment variables** |
-| `PARTICIPANTS` | `husarnet,shm,udp` | The coma separated list of paticipants in the ROS 2 Router configuration. Possible values are: `husarnet`, `shm`, `udp`, `lan` |
-| `HUSARNET_API_HOST` | `127.0.0.1` | The IPv4 address where Husarnet Daemon is running (If using a different address than `127.0.0.1` remember also to run the Husarnet Daemon with a `HUSARNET_DAEMON_API_INTERFACE` env setup ) |
+| `PARTICIPANTS` | `husarnet,shm,lo` | The coma separated list of paticipants in the ROS 2 Router configuration. Possible values are: `husarnet`, `shm`, `lo`, `lan`, `if-<if-name-optional-wildcard>`. If unset of empty you need to use a custom DDS router configuration file |
 | `ROS_DISCOVERY_SERVER` | | If set the `HusarnetParticipant` will work in the [Disocovery Server setup](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/participants/local_discovery_server.html#user-manual-participants-local-discovery-server). Set it to one of the following formats: `<husarnet-ipv6-addr>:<discovery-server-port>` or `<husarnet-hostname>:<discovery-server-port>` to connect as the Client to the device acting as a Discovery Server. To specify multiple addresses, use semicolons as separators. The server's ID is determined by its position in the list (starting from `0`). If there's an empty space between semicolons, it indicates that the respective ID is available. Eg. `ROS_DISCOVERY_SERVER=";;abc:123;;;def:456"` means that the ID of `abc:123` is `2` and ID of `def` is `5`. If one of the addresses is the same as the hosts Husarnet IPv6 address, then the Discovery Server - Server config is launch on the host. |
 | `DISCOVERY_SERVER_ID` | `-1` | The ID of the local Discovery Server. If the server config is launched (one of the addresses specified in `ROS_DISCOVERY_SERVER` is the same as host's Husarnet address), the value of `DISCOVERY_SERVER_ID` env is ignored and the ID from `ROS_DISCOVERY_SERVER` env is used. If the value is outside of the `0-255` range, then the random value (from `10-255` range) is used instead |
-| `EXIT_IF_HOST_TABLE_CHANGED` | `FALSE` | Valid only if `ROS_DISCOVERY_SERVER` envs is unset and thus starting the **Initial Peers** config. This env is useful in connection with `restart: always` Docker policy - it restarts the DDS Router with a new Initial Peers list applied (the Initial Peers list is not updated by the DDS Router in runtime)  |
-| `CONFIG_BASE` | | providing some optional, extra config to the ROS 2 Router |
 | `ROS_DOMAIN_ID` | | If set it changes the default `domain: 0` for all participants with `kind: local` (basically all instead of `HusarnetParticipant` working in the Discovery Server config)  |
-| `FILTER` |  |  It's alternative to providing `/filter.yaml` as a volume |
+| `EXIT_IF_HOST_TABLE_CHANGED` | `FALSE` | Valid only if `ROS_DISCOVERY_SERVER` envs is unset and thus starting the **Initial Peers** config. This env is useful in connection with `restart: always` Docker policy - it restarts the DDS Router with a new Initial Peers list applied (the Initial Peers list is not updated by the DDS Router in runtime)  |
 | `USER` | `root` | Allowing you to run the DDS Router as a different user (useful to enable SHM communication between host and Docker container) |
+| `HUSARNET_API_HOST` | `127.0.0.1` | The IPv4 address where Husarnet Daemon is running (If using a different address than `127.0.0.1` remember also to run the Husarnet Daemon with a `HUSARNET_DAEMON_API_INTERFACE` env setup ) |
+| `CONFIG_BASE` | | providing some optional, extra config to the ROS 2 Router |
+| `FILTER` |  |  It's alternative to providing `/filter.yaml` as a volume |
 
 ## Topic Filtering
 

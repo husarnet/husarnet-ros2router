@@ -6,8 +6,10 @@ elif ! id "$USER" &>/dev/null; then
     useradd -ms /bin/bash "$USER"
 fi
 
-if [[ $AUTO_CONFIG == "TRUE" ]]; then
+if [[ -n $PARTICIPANTS ]]; then
     gosu $USER bash -c "/run_auto_config.sh"
+else
+    echo "Skipping auto configuration."
 fi
 
 # setup dds router environment
