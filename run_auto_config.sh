@@ -21,12 +21,13 @@ create_config_husarnet() {
         export ROS_DOMAIN_ID=0
     fi
 
+    export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
+
     if [[ -z "$ROS_DISCOVERY_SERVER" ]]; then
         echo "Launching Initial Peers config"
 
         yq -i '.participants += load("/participant.husarnet.wan.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
-        export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
         yq -i '(.participants[] | select(.name == "HusarnetParticipant").listening-addresses[0].ip) = strenv(LOCAL_IP)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
         yq -i '(.participants[] | select(.name == "HusarnetParticipant").connection-addresses[0].ip) = strenv(LOCAL_IP)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     else
@@ -34,121 +35,106 @@ create_config_husarnet() {
 
         yq -i '.participants += load("/participant.husarnet.ds.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
-        # Set the local Discovery Server ID to the first element of the ID variable
-        # echo "Local Server ID: $DISCOVERY_SERVER_ID"
-        yq -i '(.participants[] | select(.name == "HusarnetParticipant").discovery-server-guid.id) = env(DISCOVERY_SERVER_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        # Splitting the string into an array using semicolon as the delimiter
+        IFS=';' read -ra DS_LIST <<<"$ROS_DISCOVERY_SERVER"
 
-        #  ==============================================
-        # Checking if connecting to other Discovery Servers
-        #  ===============================================
+        # Process the array
+        NEW_LIST=()
+        for entry in "${DS_LIST[@]}"; do
+            # If the entry is empty, replace it with "_EMPTY_"
+            if [ -z "$entry" ]; then
+                NEW_LIST+=("_EMPTY_")
+            else
+                NEW_LIST+=("$entry")
+            fi
+        done
 
-        yq -i '(.participants[] | select(.name == "HusarnetParticipant").connection-addresses) = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+        # Join back into a string
+        IFS=";"
+        NEW_STR="${NEW_LIST[*]}"
 
-        if [[ -n "$ROS_DISCOVERY_SERVER" ]]; then
-            export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
+        # Splitting the modified string into an array for final result
+        IFS=';' read -ra DS_LIST <<<"$NEW_STR"
 
-            # Splitting the string into an array using semicolon as the delimiter
-            IFS=';' read -ra DS_LIST <<<"$ROS_DISCOVERY_SERVER"
+        # Regular expression to match hostname:port or [ipv6addr]:port
+        DS_REGEX="^(([a-zA-Z0-9-]+):([0-9]+)|\[(([a-fA-F0-9]{1,4}:){1,7}[a-fA-F0-9]{1,4}|[a-fA-F0-9]{0,4})\]:([0-9]+))$"
 
-            # Process the array
-            NEW_LIST=()
-            for entry in "${DS_LIST[@]}"; do
-                # If the entry is empty, replace it with "_EMPTY_"
-                if [ -z "$entry" ]; then
-                    NEW_LIST+=("_EMPTY_")
-                else
-                    NEW_LIST+=("$entry")
-                fi
-            done
+        # creating config for super_client
+        cp /superclient.template.xml $CFG_PATH/superclient.xml
+        yq -i '.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer = [ "placeholder1", "placeholder2" ]' $CFG_PATH/superclient.xml
 
-            # Join back into a string
-            IFS=";"
-            NEW_STR="${NEW_LIST[*]}"
+        # Loop over Discovery Servers
+        current_id=0
+        for ds in ${DS_LIST[@]}; do
+            # If the current element is _EMPTY_, skip further processing in this iteration
+            if [ "$ds" = "_EMPTY_" ]; then
+                ((current_id++))
+                continue
+            fi
 
-            # Splitting the modified string into an array for final result
-            IFS=';' read -ra DS_LIST <<<"$NEW_STR"
+            if [[ "${ds}" =~ $DS_REGEX ]]; then
+                # Extract HOST and PORT from the match results
+                if [ -z "${BASH_REMATCH[4]}" ]; then
+                    # If it's in hostname:port format
+                    HOST="${BASH_REMATCH[2]}"
+                    export PORT="${BASH_REMATCH[3]}"
 
-            # Regular expression to match hostname:port or [ipv6addr]:port
-            DS_REGEX="^(([a-zA-Z0-9-]+):([0-9]+)|\[(([a-fA-F0-9]{1,4}:){1,7}[a-fA-F0-9]{1,4}|[a-fA-F0-9]{0,4})\]:([0-9]+))$"
+                    ipv6=$(echo $husarnet_api_response | yq .result.host_table | yq -r ".$HOST")
 
-            # creating config for super_client
-            cp /superclient.template.xml $CFG_PATH/superclient.xml
-            yq -i '.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer = [ "placeholder1", "placeholder2" ]' $CFG_PATH/superclient.xml
-
-            
-            # Loop over Discovery Servers
-            current_id=0
-            for ds in ${DS_LIST[@]}; do
-                # If the current element is _EMPTY_, skip further processing in this iteration
-                if [ "$ds" = "_EMPTY_" ]; then
-                    ((current_id++))
-                    continue
-                fi
-
-                if [[ "${ds}" =~ $DS_REGEX ]]; then
-                    # Extract HOST and PORT from the match results
-                    if [ -z "${BASH_REMATCH[4]}" ]; then
-                        # If it's in hostname:port format
-                        HOST="${BASH_REMATCH[2]}"
-                        export PORT="${BASH_REMATCH[3]}"
-
-                        ipv6=$(echo $husarnet_api_response | yq .result.host_table | yq -r ".$HOST")
-
-                        if [[ "$ipv6" == "null" || -z "$ipv6" ]]; then
-                            echo "Error: IPv6 address not found for $HOST"
-                            exit 1
-                        else
-                            export HOST=$ipv6
-                        fi
+                    if [[ "$ipv6" == "null" || -z "$ipv6" ]]; then
+                        echo "Error: IPv6 address not found for $HOST"
+                        exit 1
                     else
-                        # If it's in [ipv6addr]:port format
-                        HOST="${BASH_REMATCH[4]}"
-                        export PORT="${BASH_REMATCH[6]}"
-
-                        # Extract all IP addresses from the host_table
-                        IP_ADDRESSES=$(echo $husarnet_api_response | yq '.result.host_table[]')
-
-                        # Iterate over each address in IP_ADDRESSES
-                        address_found=false
-                        IFS=$'\n' # Set Internal Field Separator to newline for the loop
-                        for address in $IP_ADDRESSES; do
-                            if [[ "$address" == "$HOST" ]]; then
-                                address_found=true
-                                break
-                            fi
-                        done
-
-                        if $address_found; then
-                            export HOST
-                        else
-                            echo "Error: $HOST address not found"
-                            exit 1
-                        fi
+                        export HOST=$ipv6
                     fi
+                else
+                    # If it's in [ipv6addr]:port format
+                    HOST="${BASH_REMATCH[4]}"
+                    export PORT="${BASH_REMATCH[6]}"
 
-                    if [[ ! ($PORT -le 65535) ]]; then
-                        echo "Discovery Server Port is not a valid number or is outside the valid range (0-65535)."
+                    # Extract all IP addresses from the host_table
+                    IP_ADDRESSES=$(echo $husarnet_api_response | yq '.result.host_table[]')
+
+                    # Iterate over each address in IP_ADDRESSES
+                    address_found=false
+                    IFS=$'\n' # Set Internal Field Separator to newline for the loop
+                    for address in $IP_ADDRESSES; do
+                        if [[ "$address" == "$HOST" ]]; then
+                            address_found=true
+                            break
+                        fi
+                    done
+
+                    if $address_found; then
+                        export HOST
+                    else
+                        echo "Error: $HOST address not found"
                         exit 1
                     fi
+                fi
 
-                    export SERVER_ID=${current_id}
-                    ((current_id++))
+                if [[ ! ($PORT -le 65535) ]]; then
+                    echo "Discovery Server Port is not a valid number or is outside the valid range (0-65535)."
+                    exit 1
+                fi
 
-                    if [[ $LOCAL_IP == $HOST ]]; then
-                        echo "> Server config"
-                        export DISCOVERY_SERVER_ID=$SERVER_ID
+                export SERVER_ID=${current_id}
+                ((current_id++))
 
-                        yq -i '(.participants[] | select(.name == "HusarnetParticipant").discovery-server-guid.id) = env(SERVER_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-                        yq -i '(.participants[] | select(.name == "HusarnetParticipant").listening-addresses) += 
+                if [[ $LOCAL_IP == $HOST ]]; then
+                    echo "> Server config"
+                    export DISCOVERY_SERVER_ID=$SERVER_ID
+
+                    yq -i '(.participants[] | select(.name == "HusarnetParticipant").listening-addresses) += 
                         { 
                             "ip": strenv(HOST), 
                             "port": env(PORT), 
                             "transport": "udp"
                         }' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
-                    else
-                        echo "> Client config"
-                        yq -i '(.participants[] | select(.name == "HusarnetParticipant").connection-addresses) += 
+                else
+                    echo "> Client config"
+                    yq -i '(.participants[] | select(.name == "HusarnetParticipant").connection-addresses) += 
                             { 
                                 "discovery-server-guid": 
                                 { 
@@ -163,18 +149,18 @@ create_config_husarnet() {
                                         "transport": "udp" 
                                     } 
                                 ] 
-                            }' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml    
-                    fi
-                    echo "[$HOST]:$PORT (Server ID: $SERVER_ID)"
+                            }' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+                fi
+                echo "[$HOST]:$PORT (Server ID: $SERVER_ID)"
 
-                    # XML config for client (optional)
-                    # # Convert the decimal to a hexadecimal value
-                    hex_server_id=$(printf '%.2X' $SERVER_ID)
+                # XML config for client (optional)
+                # # Convert the decimal to a hexadecimal value
+                hex_server_id=$(printf '%.2X' $SERVER_ID)
 
-                    # Replace XX in GUID_PREFIX with the hexadecimal value
-                    export GUID_PREFIX=$(echo "44.53.XX.5F.45.50.52.4F.53.49.4D.41" | sed "s/XX/$hex_server_id/")
+                # Replace XX in GUID_PREFIX with the hexadecimal value
+                export GUID_PREFIX=$(echo "44.53.XX.5F.45.50.52.4F.53.49.4D.41" | sed "s/XX/$hex_server_id/")
 
-                    yq -i '.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer += 
+                yq -i '.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer += 
                         {
                             "+@prefix": env(GUID_PREFIX),
                             "metatrafficUnicastLocatorList": 
@@ -190,17 +176,27 @@ create_config_husarnet() {
                             }
                         }' $CFG_PATH/superclient.xml
 
-                else
-                    echo "Error: ROS_DISCOVERY_SERVER does not have a valid format: $ds"
-                    exit 1
-                fi
-            done
-            echo "> DS Local Server ID: $DISCOVERY_SERVER_ID"
+            else
+                echo "Error: ROS_DISCOVERY_SERVER does not have a valid format: $ds"
+                exit 1
+            fi
+        done
 
-            yq -i 'del(.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer[0])' $CFG_PATH/superclient.xml
-            yq -i 'del(.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer[0])' $CFG_PATH/superclient.xml
+        # Check if DISCOVERY_SERVER_ID is not set or outside the range 0-255
+        if [[ ! "$DISCOVERY_SERVER_ID" =~ ^[0-9]+$ ]] || [[ "$DISCOVERY_SERVER_ID" -lt 0 ]] || [[ "$DISCOVERY_SERVER_ID" -gt 255 ]]; then
+            echo "DISCOVERY_SERVER_ID=$DISCOVERY_SERVER_ID is not a valid number or is outside the valid range (0-255)."
+            # Generate a random value between 10 and 255 and export it
+            export DISCOVERY_SERVER_ID=$((RANDOM % 246 + 10))
+            echo "Settin to a new random value: DISCOVERY_SERVER_ID=$DISCOVERY_SERVER_ID"
         fi
 
+        yq -i '(.participants[] | select(.name == "HusarnetParticipant").discovery-server-guid.id) = env(DISCOVERY_SERVER_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+
+        yq -i 'del(.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer[0])' $CFG_PATH/superclient.xml
+        yq -i 'del(.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer[0])' $CFG_PATH/superclient.xml
+
+        echo "> DS Local Server ID: $DISCOVERY_SERVER_ID"
+        echo "> TIP: Find a Super Client config in $CFG_PATH/superclient.xml"
     fi
 }
 
