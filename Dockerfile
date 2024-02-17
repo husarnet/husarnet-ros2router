@@ -60,6 +60,7 @@ COPY participant.husarnet.wan.yaml /
 COPY participant.lan.yaml /
 COPY participant.shm.yaml /
 COPY participant.udp.yaml /
+COPY participant.echo.yaml /
 
 COPY filter.yaml /
 COPY config.base.yaml /
@@ -70,7 +71,6 @@ ENV AUTO_CONFIG=TRUE
 ENV PARTICIPANTS=husarnet,shm,udp
 ENV HUSARNET_API_HOST=127.0.0.1
 ENV ROS_DISCOVERY_SERVER=
-ENV DISCOVERY_SERVER_LISTENING_PORT=
 ENV DISCOVERY_SERVER_ID=0
 ENV EXIT_IF_HOST_TABLE_CHANGED=FALSE
 

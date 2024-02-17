@@ -21,7 +21,7 @@ create_config_husarnet() {
         export ROS_DOMAIN_ID=0
     fi
 
-    if [[ -z "$DISCOVERY_SERVER_LISTENING_PORT" && -z "$ROS_DISCOVERY_SERVER" ]]; then
+    if [[ -z "$ROS_DISCOVERY_SERVER" ]]; then
         echo "Launching Initial Peers config"
 
         yq -i '.participants += load("/participant.husarnet.wan.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
@@ -35,54 +35,8 @@ create_config_husarnet() {
         yq -i '.participants += load("/participant.husarnet.ds.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         # Set the local Discovery Server ID to the first element of the ID variable
-        echo "Local Server ID: $DISCOVERY_SERVER_ID"
+        # echo "Local Server ID: $DISCOVERY_SERVER_ID"
         yq -i '(.participants[] | select(.name == "HusarnetParticipant").discovery-server-guid.id) = env(DISCOVERY_SERVER_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-
-        #  ==============================================
-        # Checking if listening for incomming connections
-        #  ===============================================
-
-        yq -i '(.participants[] | select(.name == "HusarnetParticipant").listening-addresses) = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-
-        if [[ -n "$DISCOVERY_SERVER_LISTENING_PORT" ]]; then
-            echo "> Server config"
-            # Check if the value is a number and smaller than 65535
-            if [[ "$DISCOVERY_SERVER_LISTENING_PORT" =~ ^[0-9]+$ && $DISCOVERY_SERVER_LISTENING_PORT -lt 65535 ]]; then
-                # DISCOVERY_SERVER_PORT is set and its value is smaller than 65535.
-
-                export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
-
-                yq -i '(.participants[] | select(.name == "HusarnetParticipant").listening-addresses) += 
-                        { 
-                            "ip": env(LOCAL_IP),
-                            "port": env(DISCOVERY_SERVER_LISTENING_PORT),
-                            "transport": "udp"
-                        }' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-
-                # TIPS:
-
-                ## TIP 1:
-                echo "On different hosts, set the ROS_DISCOVERY_SERVER=[$LOCAL_IP]:$DISCOVERY_SERVER_LISTENING_PORT"
-
-                ## TIP 2:
-                cp /superclient.template.xml $CFG_PATH/superclient_single.xml
-                # Convert the decimal to a hexadecimal value
-                hex_server_id=$(printf '%.2X' $DISCOVERY_SERVER_ID)
-
-                # Replace XX in GUID_PREFIX with the hexadecimal value
-                export GUID_PREFIX=$(echo "44.53.XX.5F.45.50.52.4F.53.49.4D.41" | sed "s/XX/$hex_server_id/")
-
-                yq -i '.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer.+@prefix = env(GUID_PREFIX)' $CFG_PATH/superclient_single.xml
-                yq -i '.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer.metatrafficUnicastLocatorList.locator.udpv6.address = env(LOCAL_IP)' $CFG_PATH/superclient_single.xml
-                yq -i '.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer.metatrafficUnicastLocatorList.locator.udpv6.port = env(DISCOVERY_SERVER_LISTENING_PORT)' $CFG_PATH/superclient_single.xml
-            else
-                echo "Error: DISCOVERY_SERVER_LISTENING_PORT value is not a valid number or is greater than or equal to 65535."
-                # Insert other commands here if needed
-                exit 1
-            fi
-        else
-            yq -i 'del(.participants[] | select(.name == "HusarnetParticipant").listening-addresses)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-        fi
 
         #  ==============================================
         # Checking if connecting to other Discovery Servers
@@ -91,7 +45,7 @@ create_config_husarnet() {
         yq -i '(.participants[] | select(.name == "HusarnetParticipant").connection-addresses) = []' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
 
         if [[ -n "$ROS_DISCOVERY_SERVER" ]]; then
-            echo "> Client config"
+            export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
 
             # Splitting the string into an array using semicolon as the delimiter
             IFS=';' read -ra DS_LIST <<<"$ROS_DISCOVERY_SERVER"
@@ -121,7 +75,7 @@ create_config_husarnet() {
             cp /superclient.template.xml $CFG_PATH/superclient.xml
             yq -i '.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer = [ "placeholder1", "placeholder2" ]' $CFG_PATH/superclient.xml
 
-            echo "Connecting to:"
+            
             # Loop over Discovery Servers
             current_id=0
             for ds in ${DS_LIST[@]}; do
@@ -180,7 +134,21 @@ create_config_husarnet() {
                     export SERVER_ID=${current_id}
                     ((current_id++))
 
-                    yq -i '(.participants[] | select(.name == "HusarnetParticipant").connection-addresses) += 
+                    if [[ $LOCAL_IP == $HOST ]]; then
+                        echo "> Server config"
+                        export DISCOVERY_SERVER_ID=$SERVER_ID
+
+                        yq -i '(.participants[] | select(.name == "HusarnetParticipant").discovery-server-guid.id) = env(SERVER_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+                        yq -i '(.participants[] | select(.name == "HusarnetParticipant").listening-addresses) += 
+                        { 
+                            "ip": strenv(HOST), 
+                            "port": env(PORT), 
+                            "transport": "udp"
+                        }' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+
+                    else
+                        echo "> Client config"
+                        yq -i '(.participants[] | select(.name == "HusarnetParticipant").connection-addresses) += 
                             { 
                                 "discovery-server-guid": 
                                 { 
@@ -195,8 +163,8 @@ create_config_husarnet() {
                                         "transport": "udp" 
                                     } 
                                 ] 
-                            }' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
-
+                            }' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml    
+                    fi
                     echo "[$HOST]:$PORT (Server ID: $SERVER_ID)"
 
                     # XML config for client (optional)
@@ -227,11 +195,10 @@ create_config_husarnet() {
                     exit 1
                 fi
             done
+            echo "> DS Local Server ID: $DISCOVERY_SERVER_ID"
 
             yq -i 'del(.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer[0])' $CFG_PATH/superclient.xml
             yq -i 'del(.dds.profiles.participant.rtps.builtin.discovery_config.discoveryServersList.RemoteServer[0])' $CFG_PATH/superclient.xml
-        else
-            yq -i 'del(.participants[] | select(.name == "HusarnetParticipant").connection-addresses)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
         fi
 
     fi
@@ -239,7 +206,6 @@ create_config_husarnet() {
 
 WHITELIST_INTERFACES=$(strip_quotes "$WHITELIST_INTERFACES")
 ROS_DISCOVERY_SERVER=$(strip_quotes "$ROS_DISCOVERY_SERVER")
-DISCOVERY_SERVER_LISTENING_PORT=$(strip_quotes "$DISCOVERY_SERVER_LISTENING_PORT")
 FILTER=$(strip_quotes "$FILTER")
 
 run_auto_config() {
@@ -266,6 +232,7 @@ run_auto_config() {
     PARTICIPANT_UDP_ENABLED=false
     PARTICIPANT_SHM_ENABLED=false
     PARTICIPANT_LAN_ENABLED=false
+    PARTICIPANT_ECHO_ENABLED=false
 
     # Function to enable a participant
     enable_participant() {
@@ -281,6 +248,9 @@ run_auto_config() {
             ;;
         lan)
             PARTICIPANT_LAN_ENABLED=true
+            ;;
+        echo)
+            PARTICIPANT_ECHO_ENABLED=true
             ;;
         *)
             # Ignore any other values
@@ -345,6 +315,10 @@ run_auto_config() {
 
     if [[ $PARTICIPANT_LAN_ENABLED == true ]]; then
         yq -i '.participants += load("/participant.lan.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
+    fi
+
+    if [[ $PARTICIPANT_ECHO_ENABLED == true ]]; then
+        yq -i '.participants += load("/participant.echo.yaml")' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
     fi
 
     if [ -n "${ROS_DOMAIN_ID}" ]; then
