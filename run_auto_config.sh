@@ -184,10 +184,9 @@ create_config_husarnet() {
 
         # Check if DISCOVERY_SERVER_ID is not set or outside the range 0-255
         if [[ ! "$DISCOVERY_SERVER_ID" =~ ^[0-9]+$ ]] || [[ "$DISCOVERY_SERVER_ID" -lt 0 ]] || [[ "$DISCOVERY_SERVER_ID" -gt 255 ]]; then
-            echo "DISCOVERY_SERVER_ID=$DISCOVERY_SERVER_ID is not a valid number or is outside the valid range (0-255)."
+            echo "DISCOVERY_SERVER_ID=$DISCOVERY_SERVER_ID is not valid number. Setting a random value (10-255)."
             # Generate a random value between 10 and 255 and export it
             export DISCOVERY_SERVER_ID=$((RANDOM % 246 + 10))
-            echo "Settin to a new random value: DISCOVERY_SERVER_ID=$DISCOVERY_SERVER_ID"
         fi
 
         yq -i '(.participants[] | select(.name == "HusarnetParticipant").discovery-server-guid.id) = env(DISCOVERY_SERVER_ID)' $CFG_PATH/DDS_ROUTER_CONFIGURATION_base.yaml
