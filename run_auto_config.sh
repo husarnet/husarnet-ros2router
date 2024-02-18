@@ -57,7 +57,7 @@ create_config_husarnet() {
         IFS=';' read -ra DS_LIST <<<"$NEW_STR"
 
         # Regular expression to match hostname:port or [ipv6addr]:port
-        DS_REGEX="^(([a-zA-Z0-9-]+):([0-9]+)|\[(([a-fA-F0-9]{1,4}:){1,7}[a-fA-F0-9]{1,4}|[a-fA-F0-9]{0,4})\]:([0-9]+))$"
+        DS_REGEX="^(([a-zA-Z0-9-]+)(:[0-9]+)?|\[(([a-fA-F0-9]{1,4}:){1,7}[a-fA-F0-9]{1,4}|[a-fA-F0-9]{0,4})\](:[0-9]+)?)$"
 
         # creating config for super_client
         cp /superclient.template.xml $CFG_PATH/superclient.xml
@@ -74,10 +74,13 @@ create_config_husarnet() {
 
             if [[ "${ds}" =~ $DS_REGEX ]]; then
                 # Extract HOST and PORT from the match results
-                if [ -z "${BASH_REMATCH[4]}" ]; then
+                if [[ -n ${BASH_REMATCH[2]} ]]; then
                     # If it's in hostname:port format
                     HOST="${BASH_REMATCH[2]}"
-                    export PORT="${BASH_REMATCH[3]}"
+                    export PORT="${BASH_REMATCH[3]//:/}"
+                    if [ -z "$PORT" ]; then
+                        export PORT="11811"
+                    fi
 
                     ipv6=$(echo $husarnet_api_response | yq .result.host_table | yq -r ".$HOST")
 
@@ -87,10 +90,13 @@ create_config_husarnet() {
                     else
                         export HOST=$ipv6
                     fi
-                else
+                elif [[ -n ${BASH_REMATCH[4]} ]]; then
                     # If it's in [ipv6addr]:port format
                     HOST="${BASH_REMATCH[4]}"
-                    export PORT="${BASH_REMATCH[6]}"
+                    export PORT="${BASH_REMATCH[6]//:/}"
+                    if [ -z "$PORT" ]; then
+                        export PORT="11811"
+                    fi
 
                     # Extract all IP addresses from the host_table
                     IP_ADDRESSES=$(echo $husarnet_api_response | yq '.result.host_table[]')
@@ -184,7 +190,7 @@ create_config_husarnet() {
 
         # Check if DISCOVERY_SERVER_ID is not set or outside the range 0-255
         if [[ ! "$DISCOVERY_SERVER_ID" =~ ^[0-9]+$ ]] || [[ "$DISCOVERY_SERVER_ID" -lt 0 ]] || [[ "$DISCOVERY_SERVER_ID" -gt 255 ]]; then
-            echo "DISCOVERY_SERVER_ID=$DISCOVERY_SERVER_ID is not valid number. Setting a random value (10-255)."
+            echo "DISCOVERY_SERVER_ID=${DISCOVERY_SERVER_ID} is not valid number. Setting a random value (10-255)."
             # Generate a random value between 10 and 255 and export it
             export DISCOVERY_SERVER_ID=$((RANDOM % 246 + 10))
         fi
