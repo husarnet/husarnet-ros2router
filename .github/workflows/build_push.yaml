@@ -39,7 +39,7 @@ jobs:
         platforms: linux/amd64, linux/arm64
         push: true
         tags: |
-          husarnet/ros2router:-${{ env.SHORT_DATE }}
+          husarnet/ros2router:${{ env.SHORT_DATE }}
           husarnet/ros2router
         # cache-from: type=registry,ref=husarnet/dds-router
         cache-to: type=inline
