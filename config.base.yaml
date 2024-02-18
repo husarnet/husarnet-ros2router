@@ -1,4 +1,5 @@
 version: v4.0
 specs:
-  discovery-trigger: writer
+  discovery-trigger: reader
+  remove-unused-entities: true
 participants: []

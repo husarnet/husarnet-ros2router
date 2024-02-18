@@ -1,0 +1,6 @@
+- name: IfParticipant 
+  kind: local
+  domain: 0
+  transport: udp
+  whitelist-interfaces: []
+

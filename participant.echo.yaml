@@ -1,0 +1,5 @@
+- name: EchoParticipant
+  kind: echo
+  discovery: true                                                   # 8
+  data: false                                                        # 9
+  verbose: true      
