@@ -1,0 +1,11 @@
+version: v4.0
+
+participants:
+  - name: Participant1
+    kind: local
+    domain: 1
+    transport: udp
+  - name: Participant2
+    kind: local
+    domain: 2
+    transport: udp

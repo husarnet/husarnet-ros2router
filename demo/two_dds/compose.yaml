@@ -1,0 +1,24 @@
+services:
+  
+  talker:
+    build: .
+    environment:
+      - ROS_DOMAIN_ID=1
+    command: ros2 run demo_nodes_cpp talker
+
+  ros2router:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    volumes:
+      - ./config.yaml:/config.yaml
+    environment:
+      - PARTICIPANTS= # by keeping this env empty, we're bypassing auto-configuring the DDS Router, and we're using the config.yaml file
+    command: ddsrouter -c /config.yaml
+
+  listener:
+    build: .
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp # after you comment this line, everything works fine with FastDDS
+      - ROS_DOMAIN_ID=2
+    command: ros2 run demo_nodes_cpp listener
