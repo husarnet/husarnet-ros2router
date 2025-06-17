@@ -84,7 +84,7 @@ services:
       - PARTICIPANTS=husarnet,shm
       - |
         CONFIG_BASE=
-          version: v4.0
+          version: v5.0
           specs:
             discovery-trigger: writer
           participants:
