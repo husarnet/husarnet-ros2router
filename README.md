@@ -6,7 +6,7 @@ The `husarnet/ros2router` Docker image is designed to effortlessly bridge local 
 
 Compatible with both natively-executed ROS 2 nodes and those operating within Docker.
 
-Based on [DDS Router](https://github.com/eProsima/ros2router) project by eProsima.
+Based on [DDS Router](https://github.com/eProsima/DDS-Router) project by eProsima.
 
 ## How it works?
 
