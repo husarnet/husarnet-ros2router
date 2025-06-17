@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 AS ddsrouter_builder
+FROM ubuntu:24.04 AS ddsrouter_builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -11,7 +11,20 @@ RUN apt-get update && apt-get install -y \
         python3-sphinx \
         libyaml-cpp-dev
 
-RUN pip3 install -U \
+RUN apt-get install -y pipx && \
+    pipx ensurepath
+
+# RUN pipx install --include-deps colcon-common-extensions && \
+#     pipx install vcstool && \
+#     pipx install pyyaml && \
+#     pipx install sphinx_rtd_theme && \
+#     pipx install jsonschema
+
+# Create a virtual environment
+RUN python3 -m venv /opt/venv
+
+RUN . /opt/venv/bin/activate && \
+    pip3 install -U \
         colcon-common-extensions \
         vcstool \
         pyyaml \
@@ -24,11 +37,12 @@ WORKDIR /dds_router
 
 COPY ddsrouter.repos colcon.meta /dds_router/
 
-RUN vcs import src < ddsrouter.repos && \
+RUN . /opt/venv/bin/activate && \
+    vcs import src < ddsrouter.repos && \
     colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release  && \
     rm -rf build log src
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ARG TARGETARCH
 ARG YQ_VERSION=v4.35.1
