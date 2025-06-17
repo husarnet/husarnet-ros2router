@@ -134,7 +134,7 @@ services:
 | `EXIT_IF_HOST_TABLE_CHANGED` | `FALSE` | Valid only if `ROS_DISCOVERY_SERVER` envs is unset and thus starting the **Initial Peers** config. This env is useful in connection with `restart: always` Docker policy - it restarts the DDS Router with a new Initial Peers list applied (the Initial Peers list is not updated by the DDS Router in runtime)  |
 | `USER` | `root` | Allowing you to run the DDS Router as a different user (useful to enable SHM communication between host and Docker container) |
 | `HUSARNET_API_HOST` | `127.0.0.1` | The IPv4 address where Husarnet Daemon is running (If using a different address than `127.0.0.1` remember also to run the Husarnet Daemon with a `HUSARNET_DAEMON_API_INTERFACE` env setup ) |
-| `CONFIG_BASE` | | providing some optional, extra config to the ROS 2 Router |
+| `CONFIG_BASE` | | providing some optional, extra config to the ROS 2 Router. Default config base is [here](./config.base.yaml). Find available config options in [the DDS Router documentation](https://eprosima-dds-router.readthedocs.io/en/latest/rst/user_manual/configuration.html#specs-configuration) |
 | `FILTER` |  |  It's alternative to providing `/filter.yaml` as a volume |
 
 ## Topic Filtering
