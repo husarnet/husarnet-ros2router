@@ -300,7 +300,13 @@ run_auto_config() {
 
             # Check the exit status of curl. If it's 0, the command was successful.
             if [[ $? -eq 0 ]]; then
-                if [ "$(echo $husarnet_api_response | yq -r .result.live.health.summary)" != "true" ]; then
+                # Determine daemon readiness – works with both old and new APIs
+                ready=$(
+                    echo "$husarnet_api_response" |
+                    yq -r '.result.is_ready // .result.live.health.summary // "false"'
+                )
+
+                if [[ "$ready" != "true" ]]; then
                     if [[ $i -eq 7 ]]; then
                         echo "Husarnet API is not ready."
                         echo "Error: Exiting..."
