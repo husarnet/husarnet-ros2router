@@ -21,7 +21,11 @@ create_config_husarnet() {
         export ROS_DOMAIN_ID=0
     fi
 
+
     export LOCAL_IP=$(echo $husarnet_api_response | yq .result.local_ip)
+    if [[ -z "$LOCAL_IP" || $LOCAL_IP == "null" ]]; then
+      export LOCAL_IP=$(echo $husarnet_api_response | yq -r .result.live.local_ip)
+    fi
 
     if [[ -z "$ROS_DISCOVERY_SERVER" ]]; then
         echo "Launching Initial Peers config"
@@ -82,7 +86,11 @@ create_config_husarnet() {
                         export PORT="11811"
                     fi
 
+                    # TODO: search aliases too
                     ipv6=$(echo $husarnet_api_response | yq .result.host_table | yq -r ".$HOST")
+                    if [[ "$ipv6" == "null" || -z "$ipv6" ]]; then
+                      ipv6=$(echo $husarnet_api_response | yq -r ".result.config.dashboard.peers[] | select(.hostname == \"$HOST\") | .address")
+                    fi
 
                     if [[ "$ipv6" == "null" || -z "$ipv6" ]]; then
                         echo "Error: IPv6 address not found for $HOST"
@@ -100,6 +108,9 @@ create_config_husarnet() {
 
                     # Extract all IP addresses from the host_table
                     IP_ADDRESSES=$(echo $husarnet_api_response | yq '.result.host_table[]')
+                    if [[ -z "$IP_ADDRESSES" ]]; then
+                      IP_ADDRESSES=$(echo $husarnet_api_response | yq '.result.config.dashboard.peers[].address')
+                    fi
 
                     # Iterate over each address in IP_ADDRESSES
                     address_found=false
