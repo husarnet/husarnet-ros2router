@@ -38,8 +38,15 @@ while true; do
         if [[ -z "$DISCOVERY_SERVER_LISTENING_PORT" && -z "$ROS_DISCOVERY_SERVER" ]]; then
             export restart_ddsrouter=false
             export local_ip=$(echo $husarnet_api_response | yq .result.local_ip)
+            if [[ -z "$local_ip" || $local_ip == "null" ]]; then
+              export local_ip=$(echo $husarnet_api_response | yq -r .result.live.local_ip)
+            fi
 
             peers=$(echo $husarnet_api_response | yq '.result.whitelist')
+            if [[ -z "$peers" || $peers == "null" ]]; then
+              peers=$(echo $husarnet_api_response | yq '.result.config.dashboard.peers[].address | [] + .')
+            fi
+
             : ${peers_previous:=$peers}
 
             peers_no=$(echo $peers | yq '. | length')
