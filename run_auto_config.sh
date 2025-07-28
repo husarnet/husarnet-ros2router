@@ -92,6 +92,10 @@ create_config_husarnet() {
                       ipv6=$(echo $husarnet_api_response | yq -r ".result.config.dashboard.peers[] | select(.hostname == \"$HOST\") | .address")
                     fi
 
+                    if [[ "$ipv6" == "null" || -z "$ipv6" ]] && [[ "$HOST" == "husarnet-local" ]]; then
+                        ipv6=$(echo $husarnet_api_response | yq .result.live.local_ip)
+                    fi
+
                     if [[ "$ipv6" == "null" || -z "$ipv6" ]]; then
                         echo "Error: IPv6 address not found for $HOST"
                         exit 1
